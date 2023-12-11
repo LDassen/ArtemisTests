@@ -1,6 +1,6 @@
 module test
 
-go 1.21.5
+go 1.21.3
 
 require (
 	github.com/onsi/ginkgo v1.16.5
