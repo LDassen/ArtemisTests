@@ -44,16 +44,14 @@ func TestArtemis(t *testing.T) {
 }
 
 func loadKubeConfig() (*rest.Config, error) {
-	var kubeconfig string
-	if home := homeDir(); home != "" {
-		kubeconfig = filepath.Join(home, ".kube", "config")
-	} else {
-		return nil, fmt.Errorf("home directory not found")
-	}
-
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		// If not running inside a cluster, use kubeconfig
+		kubeconfig, found := os.LookupEnv("KUBECONFIG")
+		if !found {
+			kubeconfig = filepath.Join(homeDir(), ".kube", "config")
+		}
+
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
 			return nil, err
