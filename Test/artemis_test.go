@@ -1,20 +1,21 @@
 package test_test
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
+	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
 		// Load Kubernetes config
 		config, err := loadKubeConfig()
@@ -36,6 +37,7 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 })
 
 func TestArtemis(t *testing.T) {
+	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
@@ -47,9 +49,13 @@ func loadKubeConfig() (*rest.Config, error) {
 		return nil, fmt.Errorf("home directory not found")
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		// If running outside the cluster, use kubeconfig
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return config, nil
 }
