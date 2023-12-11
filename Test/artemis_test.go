@@ -21,7 +21,7 @@ func TestArtemis(t *testing.T) {
 }
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewGomegaWithT(t)
+	g := gomega.NewWithT(t)
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
