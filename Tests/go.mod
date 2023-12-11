@@ -3,7 +3,7 @@ module test
 go 1.21.3
 
 require (
-	github.com/onsi/ginkgo v2.13.2
+	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.10.1
 )
 
