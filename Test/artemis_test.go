@@ -7,45 +7,61 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+	"github.com/example/artemis-operator/api/v1alpha1"
+	"k8s.io/client-go/rest"
 )
 
-var _ = Describe("Pod Count in Namespace", func() {
-	var (
-		clientset *kubernetes.Clientset
-		namespace string
-	)
+var _ = ginkgo.Describe("Artemis Broker Setup", func() {
+	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
 
-	BeforeSuite(func() {
-		// Load Kubernetes config from default location or provide your kubeconfig path
-		kubeconfig := os.Getenv("KUBECONFIG")
-		if kubeconfig == "" {
-			kubeconfig = os.Getenv("HOME") + "/.kube/config"
-		}
+	// Your test goes here
+	ginkgo.It("should have three brokers running", func() {
+		// Load Kubernetes config
+		config, err := loadKubeConfig()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Build Kubernetes client
-		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-		Expect(err).NotTo(HaveOccurred())
+		// Create Kubernetes client
+		clientset, err := kubernetes.NewForConfig(config)
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
-		clientset, err = kubernetes.NewForConfig(config)
-		Expect(err).NotTo(HaveOccurred())
+		// Get Artemis broker pods
+		podList, err := clientset.CoreV1().Pods("your-namespace").List(context.TODO(), metav1.ListOptions{
+			LabelSelector: "app=artemis-broker",
+		})
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Set the namespace you want to test
-		namespace = "activemq-artemis-operator"
-	})
-
-	It("should have the expected number of pods", func() {
-		podList, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
-		Expect(err).NotTo(HaveOccurred())
-
-		// Define the expected number of pods
-		expectedPodCount := 3
-
-		// Assert the actual number of pods matches the expected count
-		Expect(len(podList.Items)).To(Equal(expectedPodCount))
+		// Assert that there are exactly 3 Artemis broker pods
+		g.Expect(len(podList.Items)).To(gomega.Equal(3), "Expected 3 Artemis brokers, but found %d", len(podList.Items))
 	})
 })
 
-func TestPodCount(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pod Count Suite")
+func TestArtemis(t *testing.T) {
+	ginkgo.RunSpecs(t, "Artemis Suite")
+}
+
+func loadKubeConfig() (*rest.Config, error) {
+	var kubeconfig string
+	if home := homeDir(); home != "" {
+		kubeconfig = filepath.Join(home, ".kube", "config")
+	} else {
+		return nil, fmt.Errorf("home directory not found")
+	}
+
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
 }
