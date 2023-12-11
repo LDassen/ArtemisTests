@@ -1,9 +1,6 @@
 package test_test
 
 import (
-	"os"
-	"testing"
-	"path/filepath"
     "net/http"
     . "github.com/onsi/ginkgo/v2"
 
