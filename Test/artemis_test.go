@@ -39,6 +39,7 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 })
 
 func TestArtemis(t *testing.T) {
+	RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
