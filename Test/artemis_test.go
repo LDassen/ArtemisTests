@@ -2,6 +2,7 @@ package test_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,12 +16,12 @@ import (
 )
 
 func TestArtemis(t *testing.T) {
-	gomega.RegisterFailHandler(gomega.Fail)
+	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewGomegaWithT(t) // Use outer testing.T
+	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
@@ -44,18 +45,16 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 })
 
 func loadKubeConfig() (*rest.Config, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		// If not running inside a cluster, use kubeconfig
-		kubeconfig, found := os.LookupEnv("KUBECONFIG")
-		if !found {
-			kubeconfig = filepath.Join(homeDir(), ".kube", "config")
-		}
+	var kubeconfig string
+	if home := homeDir(); home != "" {
+		kubeconfig = filepath.Join(home, ".kube", "config")
+	} else {
+		return nil, fmt.Errorf("home directory not found")
+	}
 
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if err != nil {
-			return nil, err
-		}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, err
 	}
 	return config, nil
 }
