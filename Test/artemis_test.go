@@ -14,6 +14,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+func TestArtemis(t *testing.T) {
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Artemis Suite")
+}
+
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
 
@@ -37,11 +42,6 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 		g.Expect(len(podList.Items)).To(gomega.Equal(3), "Expected 3 Artemis brokers, but found %d", len(podList.Items))
 	})
 })
-
-func TestArtemis(t *testing.T) {
-	RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Artemis Suite")
-}
 
 func loadKubeConfig() (*rest.Config, error) {
 	config, err := rest.InClusterConfig()
