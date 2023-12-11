@@ -15,12 +15,12 @@ import (
 )
 
 func TestArtemis(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
+	gomega.RegisterFailHandler(gomega.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
+	g := gomega.NewGomegaWithT(t) // Use outer testing.T
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
