@@ -16,7 +16,7 @@ import (
 )
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
+	g := gomega.NewWithT(ginkgo.GinkgoT())
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
