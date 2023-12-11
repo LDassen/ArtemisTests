@@ -1,18 +1,17 @@
 package test_test
 
 import (
-	"os"
-	"testing"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
-	"github.com/example/artemis-operator/api/v1alpha1"
+
+	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -30,7 +29,7 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Get Artemis broker pods
-		podList, err := clientset.CoreV1().Pods("your-namespace").List(context.TODO(), metav1.ListOptions{
+		podList, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=artemis-broker",
 		})
 		g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -52,9 +51,13 @@ func loadKubeConfig() (*rest.Config, error) {
 		return nil, fmt.Errorf("home directory not found")
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		// If not running inside a cluster, use kubeconfig
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return config, nil
 }
