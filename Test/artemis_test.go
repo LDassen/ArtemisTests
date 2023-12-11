@@ -6,10 +6,7 @@ import (
 	"testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +34,7 @@ var _ = Describe("Pod Count in Namespace", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// Set the namespace you want to test
-		namespace = "your-namespace"
+		namespace = "activemq-artemis-operator"
 	})
 
 	It("should have the expected number of pods", func() {
