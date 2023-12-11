@@ -12,16 +12,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd" // Import added
 )
 
-func TestArtemis(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Artemis Suite")
-}
-
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewWithT(t)
+	g := gomega.NewWithT(ginkgo.GinkgoT())
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
@@ -43,6 +38,10 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 		g.Expect(len(podList.Items)).To(gomega.Equal(3), "Expected 3 Artemis brokers, but found %d", len(podList.Items))
 	})
 })
+
+func TestArtemis(t *testing.T) {
+	ginkgo.RunSpecs(t, "Artemis Suite")
+}
 
 func loadKubeConfig() (*rest.Config, error) {
 	var kubeconfig string
