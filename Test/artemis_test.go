@@ -4,8 +4,10 @@ import (
 	"os"
 	"testing"
 	"path/filepath"
+
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"context"
@@ -39,8 +41,8 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 })
 
 func TestArtemis(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Artemis Suite")
+	gomega.RegisterFailHandler(Fail)
+	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
 func loadKubeConfig() (*rest.Config, error) {
