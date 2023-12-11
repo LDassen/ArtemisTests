@@ -9,35 +9,36 @@ import (
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
+	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
+
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
 		// Load Kubernetes config
 		config, err := loadKubeConfig()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Create Kubernetes client
 		clientset, err := kubernetes.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Get Artemis broker pods
 		podList, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{
 			LabelSelector: "app=artemis-broker",
 		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Assert that there are exactly 3 Artemis broker pods
-		gomega.Expect(len(podList.Items)).To(gomega.Equal(3), "Expected 3 Artemis brokers, but found %d", len(podList.Items))
+		g.Expect(len(podList.Items)).To(gomega.Equal(3), "Expected 3 Artemis brokers, but found %d", len(podList.Items))
 	})
 })
 
 func TestArtemis(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
