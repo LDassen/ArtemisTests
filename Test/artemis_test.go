@@ -1,22 +1,21 @@
 package test_test
 
 import (
-	"context"
-	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
-
+	"path/filepath"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"context"
+	"fmt"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd" // Import added
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	g := gomega.NewWithT(ginkgo.GinkgoT())
+	g := gomega.NewGomegaWithT(ginkgo.GinkgoT())
 
 	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
@@ -40,6 +39,7 @@ var _ = ginkgo.Describe("Artemis Broker Setup", func() {
 })
 
 func TestArtemis(t *testing.T) {
+	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Artemis Suite")
 }
 
