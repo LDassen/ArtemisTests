@@ -2,21 +2,19 @@ package test_test
 
 import (
 	"os"
-	"testing"
 	"path/filepath"
+	"testing"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"context"
-	"fmt"
-	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = ginkgo.Describe("Artemis Broker Setup", func() {
-	// Your test goes here
 	ginkgo.It("should have three brokers running", func() {
 		// Load Kubernetes config
 		config, err := loadKubeConfig()
