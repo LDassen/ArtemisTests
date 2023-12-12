@@ -39,7 +39,7 @@ var _ = Describe("Artemis Broker Pods", func() {
 	})
 })
 
-func TestArtemis(t *testing.T) {
+func TestOperator(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Artemis Suite")
 }
