@@ -8,6 +8,7 @@ import (
     . "github.com/onsi/gomega"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Artemis Broker Pods", func() {
