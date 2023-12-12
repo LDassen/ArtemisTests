@@ -1,37 +1,36 @@
 package test_test
 
 import (
-	"bytes"
-	"os/exec"
-	"strings"
-	"testing"
+    "context"
+    "testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/rest"
 )
 
 var _ = Describe("Artemis Broker Pods", func() {
-	It("should have the correct number of 'broker' pods running", func() {
-		namespace := "activemq-artemis-operator"
-		expectedPodCount := 3 // Set your expected number of 'broker' pods
+    It("should have the correct number of 'broker' pods running", func() {
+        config, err := rest.InClusterConfig()
+        Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
-		// Run kubectl command to get the number of 'broker' pods
-		cmd := exec.Command("kubectl", "get", "pods", "-n", namespace, "--selector=application=ex-aao-app", "--no-headers", "-o", "custom-columns=NAME:.metadata.name")
-		var out bytes.Buffer
-		cmd.Stdout = &out
+        clientset, err := kubernetes.NewForConfig(config)
+        Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		err := cmd.Run()
-		Expect(err).To(BeNil(), "Error running kubectl command: %v", err)
+        namespace := "activemq-artemis-operator"
+        expectedPodCount := 3 // Set your expected number of 'broker' pods
 
-		// Count the number of lines in the output
-		actualPodCount := len(strings.Split(out.String(), "\n")) - 1
+        pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
+        Expect(err).To(BeNil(), "Error getting pods: %v", err)
 
-		// Assert that the actual count matches the expected count
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
-	})
+        actualPodCount := len(pods.Items)
+
+        Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
+    })
 })
 
 func TestArtemis(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Artemis Suite")
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Artemis Suite")
 }
