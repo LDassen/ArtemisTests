@@ -2,7 +2,9 @@ package test_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/client-go/util/rest"
 	"k8s.io/client-go/util/wait"
 )
 
@@ -67,4 +68,3 @@ func getClient() (*kubernetes.Clientset, error) {
 
 	return clientset, err
 }
-
