@@ -38,8 +38,3 @@ var _ = Describe("Artemis Broker Pods", func() {
 		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
 	})
 })
-
-func TestOperator(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Artemis Suite")
-}
