@@ -2,7 +2,6 @@ package test_test
 
 import (
 	"bytes"
-	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
