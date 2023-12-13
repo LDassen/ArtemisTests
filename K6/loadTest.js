@@ -17,6 +17,9 @@ export default function () {
   let command = `./artemis producer --user ${username} --password ${password} --url ${artemisURL} --message-count ${messageCount}`;
   let result = exec(command);
 
+  // Log the result for debugging
+  console.log('Command result:', result);
+
   // Check if the command was successful (return code 0)
   check(result, {
     'command executed successfully': (r) => r.code === 0,
