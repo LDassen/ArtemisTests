@@ -18,7 +18,7 @@ var _ = Describe("Artemis Broker Pods", func() {
 		clientset, err := kubernetes.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		namespace := "activemq-artemis-operator"
+		namespace := "activemq-artemis-brokers"
 		expectedPodCount := 3 // Set your expected number of 'broker' pods
 
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
