@@ -1,4 +1,4 @@
-import http from 'k6/http';
+import { exec } from 'k6/execution';
 import { check } from 'k6';
 
 export let options = {
@@ -8,25 +8,17 @@ export let options = {
 
 export default function () {
   // Replace the URL, username, and password with your Artemis broker endpoint and credentials
-  let url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  let artemisURL = 'tcp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
   let username = 'cgi';
   let password = 'cgi';
+  let messageCount = 100;
 
-  // Example: Sending a message to a queue
-  let payload = JSON.stringify({
-    message: 'Hello, Artemis!',
-  });
+  // Execute the Artemis CLI tool command
+  let command = `./artemis producer --user ${username} --password ${password} --url ${artemisURL} --message-count ${messageCount}`;
+  let result = exec(command);
 
-  let params = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${btoa(`${username}:${password}`)}`, // Basic Authentication
-    },
-  };
-
-  let res = http.post(`${url}/queue/your-queue-name`, payload, params);
-
-  check(res, {
-    'message sent successfully': (r) => r.status === 200,
+  // Check if the command was successful (return code 0)
+  check(result, {
+    'command executed successfully': (r) => r.code === 0,
   });
 }
