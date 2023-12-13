@@ -7,8 +7,10 @@ export let options = {
 };
 
 export default function () {
-  // Replace the URL with your Artemis broker endpoint
+  // Replace the URL, username, and password with your Artemis broker endpoint and credentials
   let url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  let username = 'cgi';
+  let password = 'cgi';
 
   // Example: Sending a message to a queue
   let payload = JSON.stringify({
@@ -18,6 +20,7 @@ export default function () {
   let params = {
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Basic ${btoa(`${username}:${password}`)}`, // Basic Authentication
     },
   };
 
