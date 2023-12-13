@@ -8,7 +8,7 @@ export let options = {
 
 export default function () {
   // Replace the URL with your Artemis broker endpoint
-  let url = 'http://10.205.173.62:61619';
+  let url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
 
   // Example: Sending a message to a queue
   let payload = JSON.stringify({
