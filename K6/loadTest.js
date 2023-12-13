@@ -8,7 +8,7 @@ export let options = {
 
 export default function () {
   // Replace the URL, username, and password with your Artemis broker endpoint and credentials
-  let artemisURL = 'tcp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  let artemisURL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
   let username = 'cgi';
   let password = 'cgi';
   let messageCount = 100;
