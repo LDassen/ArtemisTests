@@ -10,9 +10,11 @@ export default function () {
   const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';  // Adjust the URL according to your Artemis setup
   const queueName = 'exampleQueueCore';
   const message = 'Hello, Core!';
+  const username = 'cgi'
+  const password = 'cgi'
 
   const payload = JSON.stringify({ queueName, message });
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'Authorization': `Basic ${encodeBase64(`${username}:${password}`)}`};
 
   const response = http.post(`${url}/send-receive-endpoint`, payload, { headers });
 
