@@ -5,7 +5,7 @@ const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.lo
 
 export const options = {
   stages: [
-    { duration: 'm', target: 50 } // Ramp up to 50 virtual users over 2 minutes
+    { duration: 'm', target: 50 }, // Ramp up to 50 virtual users over 2 minutes
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% of requests must complete within 500ms
