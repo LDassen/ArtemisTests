@@ -8,7 +8,7 @@ export const options = {
 
 export default function () {
   const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
-  const queueName = 'exampleQueueCore';
+  const queueName = 'TEST';
   const message = 'Hello, Core!';
   const username = 'cgi';
   const password = 'cgi';
