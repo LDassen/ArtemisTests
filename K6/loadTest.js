@@ -10,11 +10,21 @@ export default function () {
   const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';  // Adjust the URL according to your Artemis setup
   const queueName = 'exampleQueueCore';
   const message = 'Hello, Core!';
-  const username = 'cgi'
-  const password = 'cgi'
+  const username = 'cgi';
+  const password = 'cgi';
 
-  const payload = JSON.stringify({ queueName, message });
-  const headers = { 'Content-Type': 'application/json'};
+  const payload = JSON.stringify({
+    queueName,
+    message,
+    user: {
+      username,
+      password,
+    },
+  });
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
 
   const response = http.post(`${url}/send-receive-endpoint`, payload, { headers });
 
@@ -22,9 +32,6 @@ export default function () {
     'HTTP Request Successful': (r) => r.status === 200,
     'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
   });
-
-  // Log the metrics to the console
-  console.log(`Metrics: ${response.body}`);
 
   // Sleep for a short duration between requests (adjust as needed)
   sleep(1);
