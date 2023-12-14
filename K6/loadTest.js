@@ -5,9 +5,9 @@ const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.lo
 
 export const options = {
   stages: [
-    { duration: '1m', target: 50 }, // Ramp up to 50 virtual users over 2 minutes
-    { duration: '1m', target: 50 }, // Stay at 50 virtual users for 5 minutes
-    { duration: '1m', target: 0 },  // Ramp down to 0 virtual users over 2 minutes
+    { duration: '1m', target: 50 }, // Ramp up to 50 virtual users over 1 minute
+    { duration: '1m', target: 50 }, // Stay at 50 virtual users for 1 minute
+    { duration: '1m', target: 0 },  // Ramp down to 0 virtual users over 1 minute
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% of requests must complete within 500ms
@@ -20,9 +20,9 @@ const queueName = 'TESTKUBE'; // Replace with the actual queue name
 export default function () {
   group('Send Message to Queue', () => {
     // Prepare the message payload
-    const messagePayload = JSON.stringify({ key: 'value' });
+    const messagePayload = 'hi, this is a test';
 
-    console.log('Sending message to the queue:', queueName);
+    console.log('Sending message to the queue:', queueName, 'Message:', messagePayload);
 
     // Send a message to the queue
     const sendMessageResponse = http.post(
