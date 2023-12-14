@@ -1,4 +1,5 @@
-import { check } from 'k6';
+import { check, sleep } from 'k6';
+import http from 'k6/http';
 
 export const options = {
   vus: 10,
@@ -10,14 +11,16 @@ export default function () {
   const queueName = 'exampleQueueCore';
   const message = 'Hello, Core!';
 
-  const response = http.post(`${url}/send-receive-endpoint`, JSON.stringify({ queueName, message }), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const payload = JSON.stringify({ queueName, message });
+  const headers = { 'Content-Type': 'application/json' };
+
+  const response = http.post(`${url}/send-receive-endpoint`, payload, { headers });
 
   check(response, {
     'HTTP Request Successful': (r) => r.status === 200,
     'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
   });
+
+  // Sleep for a short duration between requests (adjust as needed)
+  sleep(1);
 }
