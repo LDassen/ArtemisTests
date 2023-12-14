@@ -6,7 +6,7 @@ export const options = {
 };
 
 export default function () {
-  const url = 'ws://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
   const queueName = 'exampleQueueCore';
   const message = 'Hello, Core!';
 
