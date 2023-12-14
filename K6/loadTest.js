@@ -14,8 +14,7 @@ export default function () {
   const password = 'cgi';
 
   const payload = JSON.stringify({
-    queueName,
-    message,
+    body: message,
   });
 
   const headers = {
@@ -23,14 +22,15 @@ export default function () {
     'Authorization': `Basic ${customEncodeBase64(`${username}:${password}`)}`,
   };
 
-  const response = http.post(`${url}/queues/${queueName}`, payload, { headers });
+  const response = http.post(`${url}/queues/${queueName}/messages`, payload, { headers });
   console.log(response.status, response.body);
-  console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/queues/${queueName}`, payload, headers }, null, 2)}`);
+  console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/queues/${queueName}/messages`, payload, headers }, null, 2)}`);
   console.log(`HTTP Response: ${JSON.stringify(response, null, 2)}`);
   console.log(`HTTP Response Status Code: ${response.status}`);
 
   check(response, {
     'HTTP Request Successful': (r) => r.status === 200,
+    // You may need to adjust the check based on the actual response structure
     'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
   });
 
