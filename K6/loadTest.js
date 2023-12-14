@@ -14,7 +14,7 @@ export default function () {
   const password = 'cgi'
 
   const payload = JSON.stringify({ queueName, message });
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Basic ${encodeBase64(`${username}:${password}`)}`};
+  const headers = { 'Content-Type': 'application/json'};
 
   const response = http.post(`${url}/send-receive-endpoint`, payload, { headers });
 
