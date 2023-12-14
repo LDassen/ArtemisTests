@@ -14,8 +14,11 @@ export default function () {
 
   check(response, {
     'HTTP Request Successful': (r) => r.status === 200,
-    'Metrics Retrieved Successfully': (r) => r.body.includes('broker'),  // Replace 'your_metric_keyword' with an actual keyword from your metrics
+    'Metrics Retrieved Successfully': (r) => r.body.includes('your_metric_keyword'),  // Replace 'your_metric_keyword' with an actual keyword from your metrics
   });
+
+  // Log the metrics to the console
+  console.log(`Metrics: ${response.body}`);
 
   // Sleep for a short duration between requests (adjust as needed)
   sleep(1);
