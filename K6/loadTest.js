@@ -25,6 +25,9 @@ export default function () {
 
   const response = http.post(`${url}/send-receive-endpoint`, payload, { headers });
   console.log(response.status, response.body);
+  console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/send-receive-endpoint`, payload, headers }, null, 2)}`);
+  console.log(`HTTP Response: ${JSON.stringify(response, null, 2)}`);
+  console.log(`HTTP Response Status Code: ${response.status}`);
 
   check(response, {
     'HTTP Request Successful': (r) => r.status === 200,
