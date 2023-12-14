@@ -14,7 +14,7 @@ export const options = {
   },
 };
 
-const credentials = { username: 'cgi', password: 'cgi' };
+const credentials = { username: 'artemis', password: 'artemis' };
 const queueName = 'TESTKUBE'; // Replace with the actual queue name
 
 export default function () {
