@@ -6,21 +6,18 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';  // Adjust the URL according to your Artemis setup
   const queueName = 'exampleQueueCore';
   const message = 'Hello, Core!';
 
-  const response = check(
-    ws.connect(url, {}, (socket) => {
-      // Send message
-      socket.send(JSON.stringify({ queueName, message }));
+  const response = http.post(`${url}/send-receive-endpoint`, JSON.stringify({ queueName, message }), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-      // Receive message
-      const receivedMessage = socket.recv();
-      check(receivedMessage, {
-        'Core Message Received Successfully': (r) => r !== null,
-      });
-    }),
-    { 'WebSocket Connection Established': (r) => r && r.code === 101 }
-  );
+  check(response, {
+    'HTTP Request Successful': (r) => r.status === 200,
+    'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
+  });
 }
