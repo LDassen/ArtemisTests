@@ -3,7 +3,7 @@ import http from 'k6/http';
 
 export const options = {
   vus: 10,
-  duration: '60s',
+  duration: '30s',
 };
 
 export default function () {
@@ -13,7 +13,11 @@ export default function () {
   const user = 'amq';
   const password = 'amq';
 
-  // The payload structure might depend on your specific use case and Artemis configuration
+  // First, create the queue if it doesn't exist (you might not need this step)
+  const createQueueUrl = `${url}/queues/${queueName}`;
+  const responseCreateQueue = http.get(createQueueUrl, { headers: { 'Authorization': `Basic ${customEncodeBase64(`${user}:${password}`)}` } });
+  console.log(`Create Queue Response: ${responseCreateQueue.status} ${responseCreateQueue.body}`);
+
   const payload = JSON.stringify({
     body: message,
   });
@@ -23,24 +27,15 @@ export default function () {
     'Authorization': `Basic ${customEncodeBase64(`${user}:${password}`)}`,
   };
 
-  // Perform a HEAD or GET request on the queue to get necessary information
-  const responseQueue = http.get(`${url}/queues/${queueName}`, { headers });
+  // Send the message to the queue
+  const response = http.post(`${url}/queues/${queueName}`, payload, { headers });
+  console.log(response.status, response.body);
+  console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/queues/${queueName}`, payload, headers }, null, 2)}`);
+  console.log(`HTTP Response: ${JSON.stringify(response, null, 2)}`);
+  console.log(`HTTP Response Status Code: ${response.status}`);
 
-  // Extract necessary URLs from the response headers
-  const msgCreateUrl = responseQueue.headers['msg-create'];
-  const msgCreateWithIdUrl = responseQueue.headers['msg-create-with-id'];
-
-  // Perform a POST request to create a message in the queue
-  const responseCreateMsg = http.post(msgCreateUrl, payload, { headers });
-
-  console.log(responseCreateMsg.status, responseCreateMsg.body);
-  console.log(`HTTP Request: ${JSON.stringify({ url: msgCreateUrl, payload, headers }, null, 2)}`);
-  console.log(`HTTP Response: ${JSON.stringify(responseCreateMsg, null, 2)}`);
-  console.log(`HTTP Response Status Code: ${responseCreateMsg.status}`);
-
-  // Check the response from the POST request
-  check(responseCreateMsg, {
-    'Message Creation Successful': (r) => r.status === 200,
+  check(response, {
+    'HTTP Request Successful': (r) => r.status === 200,
     // You may need to adjust the check based on the actual response structure
     'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
   });
