@@ -8,28 +8,39 @@ export const options = {
 
 export default function () {
   const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
-  const queueName = 'TEST';
+  const queueName = 'TESTKUBE';
   const message = 'Hello, Core!';
-  const username = 'cgi';
-  const password = 'cgi';
+  const user = 'amq';
+  const password = 'amq';
 
+  // The payload structure might depend on your specific use case and Artemis configuration
   const payload = JSON.stringify({
     body: message,
   });
 
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Basic ${customEncodeBase64(`${username}:${password}`)}`,
+    'Authorization': `Basic ${customEncodeBase64(`${user}:${password}`)}`,
   };
 
-  const response = http.post(`${url}/queues/${queueName}/messages`, payload, { headers });
-  console.log(response.status, response.body);
-  console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/queues/${queueName}/messages`, payload, headers }, null, 2)}`);
-  console.log(`HTTP Response: ${JSON.stringify(response, null, 2)}`);
-  console.log(`HTTP Response Status Code: ${response.status}`);
+  // Perform a HEAD or GET request on the queue to get necessary information
+  const responseQueue = http.get(`${url}/queues/${queueName}`, { headers });
 
-  check(response, {
-    'HTTP Request Successful': (r) => r.status === 200,
+  // Extract necessary URLs from the response headers
+  const msgCreateUrl = responseQueue.headers['msg-create'];
+  const msgCreateWithIdUrl = responseQueue.headers['msg-create-with-id'];
+
+  // Perform a POST request to create a message in the queue
+  const responseCreateMsg = http.post(msgCreateUrl, payload, { headers });
+
+  console.log(responseCreateMsg.status, responseCreateMsg.body);
+  console.log(`HTTP Request: ${JSON.stringify({ url: msgCreateUrl, payload, headers }, null, 2)}`);
+  console.log(`HTTP Response: ${JSON.stringify(responseCreateMsg, null, 2)}`);
+  console.log(`HTTP Response Status Code: ${responseCreateMsg.status}`);
+
+  // Check the response from the POST request
+  check(responseCreateMsg, {
+    'Message Creation Successful': (r) => r.status === 200,
     // You may need to adjust the check based on the actual response structure
     'Core Message Received Successfully': (r) => r.json('receivedMessage') !== null,
   });
