@@ -27,7 +27,7 @@ export default function () {
     // Send a message to the queue
     const sendMessageResponse = http.post(
       `${BASE_URL}/queues/${queueName}/send`,
-      messagePayload,
+      messagePayload, { timeout: "60s"},
       { auth: credentials }
     );
 
