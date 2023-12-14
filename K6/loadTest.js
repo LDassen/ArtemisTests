@@ -1,4 +1,4 @@
-import { check, group } from 'k6';
+import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
 const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
