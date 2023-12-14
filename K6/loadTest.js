@@ -1,5 +1,4 @@
 import { check } from 'k6';
-import { Core } from 'k6/x/amqp';
 import { SharedArray } from 'k6/data';
 
 // Define the Artemis broker connection details for Core protocol
