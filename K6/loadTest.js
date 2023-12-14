@@ -13,11 +13,6 @@ export default function () {
   const user = 'amq';
   const password = 'amq';
 
-  // First, create the queue if it doesn't exist (you might not need this step)
-  const createQueueUrl = `${url}/queues/${queueName}`;
-  const responseCreateQueue = http.get(createQueueUrl, { headers: { 'Authorization': `Basic ${customEncodeBase64(`${user}:${password}`)}` } });
-  console.log(`Create Queue Response: ${responseCreateQueue.status} ${responseCreateQueue.body}`);
-
   const payload = JSON.stringify({
     body: message,
   });
@@ -27,7 +22,6 @@ export default function () {
     'Authorization': `Basic ${customEncodeBase64(`${user}:${password}`)}`,
   };
 
-  // Send the message to the queue
   const response = http.post(`${url}/queues/${queueName}`, payload, { headers });
   console.log(response.status, response.body);
   console.log(`HTTP Request: ${JSON.stringify({ url: `${url}/queues/${queueName}`, payload, headers }, null, 2)}`);
