@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -52,29 +53,27 @@ func checkNamespaceExists(clientset *kubernetes.Clientset, namespace string) (bo
 		// Namespace exists
 		return true, nil
 	}
-	if metav1.IsNotFound(err) {
-		// Namespace not found
-		return false, nil
-	}
-	// Other error
 	return false, err
 }
 
 // getNamespaceLogs retrieves logs for a namespace
 func getNamespaceLogs(clientset *kubernetes.Clientset, namespace string) (string, error) {
-	logOptions := &corev1.PodLogOptions{}
-	logs, err := clientset.CoreV1().Namespaces().GetLogs(namespace, logOptions).Stream(context.TODO())
-	if err != nil {
-		return "", err
-	}
-	defer logs.Close()
-
-	logData, err := ioutil.ReadAll(logs)
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return "", err
 	}
 
-	return string(logData), nil
+	var logsBuilder strings.Builder
+
+	for _, pod := range pods.Items {
+		logs, err := getPodLogs(clientset, namespace, pod.Name)
+		if err != nil {
+			return "", err
+		}
+		logsBuilder.WriteString(fmt.Sprintf("Pod: %s\n%s\n", pod.Name, logs))
+	}
+
+	return logsBuilder.String(), nil
 }
 
 // applyConfigFile applies a single Kubernetes configuration file
