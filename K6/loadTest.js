@@ -1,8 +1,7 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-// const BASE_URL = 'http://10.204.0.36:61616';
-const BASE_URL = 'http://10.204.0.53:61616';
+const BASE_URL = 'http://10.204.0.36:61616';
 
 export const options = {
   stages: [
@@ -27,8 +26,7 @@ export default function () {
 
     // Send a message to the queue
     const sendMessageResponse = http.post(`${BASE_URL}/queues/${queueName}/send`, messagePayload, { timeout: "60s"}, { auth: credentials });
-    // const sendMessageResponse = http.post(`${BASE_URL}/jolokia/exec/org.apache.activemq.artemis:broker=\"artemis-broker\",component=addresses,address=\"TESTKUBE\"/sendMessage(java.lang.String)`,{ timeout: "60s", auth: credentials });
-    
+
     console.log('Response status:', sendMessageResponse.status);
 
     // Check if the request was successful
