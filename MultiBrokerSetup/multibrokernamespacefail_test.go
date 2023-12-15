@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	corev1 "k8s.io/api/core/v1"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Apply Kubernetes Configuration Files and Get Error Logs", func() {
-	It("should apply configuration files and retrieve error logs", func() {
+var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func() {
+	It("should apply a configuration file and retrieve error logs", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -22,11 +24,11 @@ var _ = Describe("Apply Kubernetes Configuration Files and Get Error Logs", func
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "unexisting-namespace"
-		configFilesPath := "ex-aao.yaml"
+		configFilePath := "ex-aao.yaml" // Change this to the path of your single configuration file
 
-		// Apply Kubernetes configuration files
-		err = applyConfigFiles(clientset, namespace, configFilesPath)
-		Expect(err).To(BeNil(), "Error applying configuration files: %v", err)
+		// Apply the single Kubernetes configuration file
+		err = applyConfigFile(clientset, namespace, configFilePath)
+		Expect(err).To(BeNil(), "Error applying the configuration file: %v", err)
 
 		// Get error logs from all pods in the namespace
 		errorLogs := getErrorLogs(clientset, namespace)
@@ -34,32 +36,20 @@ var _ = Describe("Apply Kubernetes Configuration Files and Get Error Logs", func
 	})
 })
 
-// applyConfigFiles applies Kubernetes configuration files in a specified directory
-func applyConfigFiles(clientset *kubernetes.Clientset, namespace, configFilesPath string) error {
-	files, err := ioutil.ReadDir(configFilesPath)
+// applyConfigFile applies a single Kubernetes configuration file
+func applyConfigFile(clientset *kubernetes.Clientset, namespace, configFilePath string) error {
+	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return err
 	}
 
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		filePath := filepath.Join(configFilesPath, file.Name())
-		content, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return err
-		}
-
-		_, err = clientset.CoreV1().RESTClient().Post().
-			Resource("pods").
-			Namespace(namespace).
-			Body(content).
-			DoRaw(context.TODO())
-		if err != nil {
-			return err
-		}
+	_, err = clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Namespace(namespace).
+		Body(content).
+		DoRaw(context.TODO())
+	if err != nil {
+		return err
 	}
 
 	return nil
