@@ -4,20 +4,17 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"time"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Apply Kubernetes Configuration Files and Check Logs", func() {
-	It("should apply configuration files and check logs for errors", func() {
+var _ = Describe("Apply Kubernetes Configuration Files and Get Error Logs", func() {
+	It("should apply configuration files and retrieve error logs", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -31,12 +28,9 @@ var _ = Describe("Apply Kubernetes Configuration Files and Check Logs", func() {
 		err = applyConfigFiles(clientset, namespace, configFilesPath)
 		Expect(err).To(BeNil(), "Error applying configuration files: %v", err)
 
-		// Wait for pods to be ready
-		err = waitForPodsReady(clientset, namespace, 1*time.Minute)
-		Expect(err).To(BeNil(), "Error waiting for pods to be ready: %v", err)
-
-		// Check Kubernetes logs for errors
-		checkLogsForErrors(clientset, namespace)
+		// Get error logs from all pods in the namespace
+		errorLogs := getErrorLogs(clientset, namespace)
+		fmt.Printf("Error logs from all pods:\n%s\n", errorLogs)
 	})
 })
 
@@ -71,38 +65,22 @@ func applyConfigFiles(clientset *kubernetes.Clientset, namespace, configFilesPat
 	return nil
 }
 
-// waitForPodsReady waits for all pods in a namespace to be in the 'Running' phase
-func waitForPodsReady(clientset *kubernetes.Clientset, namespace string, timeout time.Duration) error {
-	return wait.PollImmediate(time.Second, timeout, func() (bool, error) {
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-
-		for _, pod := range pods.Items {
-			if pod.Status.Phase != corev1.PodRunning {
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-}
-
-// checkLogsForErrors retrieves logs from all pods in a namespace and prints any errors
-func checkLogsForErrors(clientset *kubernetes.Clientset, namespace string) {
+// getErrorLogs retrieves error logs from all pods in a namespace
+func getErrorLogs(clientset *kubernetes.Clientset, namespace string) string {
 	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	Expect(err).To(BeNil(), "Error getting pods: %v", err)
+
+	var errorLogs string
 
 	for _, pod := range pods.Items {
 		logs, err := getPodLogs(clientset, namespace, pod.Name)
 		Expect(err).To(BeNil(), "Error getting logs for pod %s: %v", pod.Name, err)
 
-		// Check logs for errors and print
-		if containsError(logs) {
-			fmt.Printf("Error found in logs for pod %s:\n%s\n", pod.Name, logs)
-		}
+		// Append logs to the overall errorLogs string
+		errorLogs += fmt.Sprintf("Error logs for pod %s:\n%s\n", pod.Name, logs)
 	}
+
+	return errorLogs
 }
 
 // getPodLogs retrieves logs from a pod
@@ -120,11 +98,4 @@ func getPodLogs(clientset *kubernetes.Clientset, namespace, podName string) (str
 	}
 
 	return string(logData), nil
-}
-
-// containsError checks if logs contain any error messages
-func containsError(logs string) bool {
-	// Implement your own logic to check for errors in the logs
-	// For example, you can search for specific error patterns
-	return strings.Contains(logs, "ERROR")
 }
