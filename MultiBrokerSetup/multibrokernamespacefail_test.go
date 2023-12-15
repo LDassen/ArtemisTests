@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
