@@ -1,7 +1,7 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.0.53:61616';
+const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616';
 
 export const options = {
   stages: [
@@ -20,12 +20,16 @@ const queueName = 'TESTKUBE'; // Replace with the actual queue name
 export default function () {
   group('Send Message to Queue', () => {
     // Prepare the message payload
-    const messagePayload = 'Hi, this is a test';
+    const messagePayload = 'hi, this is a test';
 
     console.log('Sending message to the queue:', queueName, 'Message:', messagePayload);
 
     // Send a message to the queue
-    const sendMessageResponse = http.post(`${BASE_URL}/queues/${queueName}/send`, messagePayload, { timeout: "60s"}, { auth: credentials });
+    const sendMessageResponse = http.post(
+      `${BASE_URL}/queues/${queueName}/send`,
+      messagePayload, { timeout: "60s"},
+      { auth: credentials }
+    );
 
     console.log('Response status:', sendMessageResponse.status);
 
