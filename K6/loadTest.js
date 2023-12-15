@@ -2,7 +2,7 @@ import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
 // const BASE_URL = 'http://10.204.0.36:61616';
-const BASE_URL = 'http://10.204.1.8:61616';
+const BASE_URL = 'http://10.204.0.53:61616';
 
 export const options = {
   stages: [
@@ -15,7 +15,7 @@ export const options = {
   },
 };
 
-const credentials = { username: 'teg', password: 'ghy' };
+const credentials = { username: 'artemis', password: 'artemis' };
 const queueName = 'TESTKUBE'; // Replace with the actual queue name
 
 export default function () {
