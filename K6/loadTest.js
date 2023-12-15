@@ -1,7 +1,7 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.1.89:61616';
+const BASE_URL = 'http://10.204.0.36:61616';
 
 export const options = {
   stages: [
@@ -20,7 +20,7 @@ const queueName = 'TESTKUBE'; // Replace with the actual queue name
 export default function () {
   group('Send Message to Queue', () => {
     // Prepare the message payload
-    const messagePayload = 'hi, this is a test';
+    const messagePayload = 'Hi, this is a test';
 
     console.log('Sending message to the queue:', queueName, 'Message:', messagePayload);
 
