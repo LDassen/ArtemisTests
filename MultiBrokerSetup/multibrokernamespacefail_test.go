@@ -24,15 +24,58 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 		namespace := "unexisting-namespace"
 		configFilePath := "ex-aao.yaml" // Change this to the path of your single configuration file
 
-		// Apply the single Kubernetes configuration file
-		err = applyConfigFile(clientset, namespace, configFilePath)
-		Expect(err).To(BeNil(), "Error applying the configuration file: %v", err)
+		// Check if the namespace exists
+		namespaceExists, err := checkNamespaceExists(clientset, namespace)
+		Expect(err).To(BeNil(), "Error checking if namespace exists: %v", err)
 
-		// Get error logs from all pods in the namespace
-		errorLogs := getErrorLogs(clientset, namespace)
-		fmt.Printf("Error logs from all pods:\n%s\n", errorLogs)
+		// If the namespace doesn't exist, print Kubernetes logs
+		if !namespaceExists {
+			namespaceLogs, err := getNamespaceLogs(clientset, namespace)
+			Expect(err).To(BeNil(), "Error getting namespace logs: %v", err)
+
+			fmt.Printf("Namespace %s does not exist. Kubernetes logs:\n%s\n", namespace, namespaceLogs)
+		}
+
+		// Apply the single Kubernetes configuration file (if the namespace exists)
+		if !namespaceExists {
+			err = applyConfigFile(clientset, namespace, configFilePath)
+			Expect(err).ToNot(BeNil(), "Expected an error applying the configuration file")
+			fmt.Printf("Error applying the configuration file: %v\n", err)
+		}
 	})
 })
+
+// checkNamespaceExists checks if a namespace exists in the Kubernetes cluster
+func checkNamespaceExists(clientset *kubernetes.Clientset, namespace string) (bool, error) {
+	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+	if err == nil {
+		// Namespace exists
+		return true, nil
+	}
+	if metav1.IsNotFound(err) {
+		// Namespace not found
+		return false, nil
+	}
+	// Other error
+	return false, err
+}
+
+// getNamespaceLogs retrieves logs for a namespace
+func getNamespaceLogs(clientset *kubernetes.Clientset, namespace string) (string, error) {
+	logOptions := &corev1.PodLogOptions{}
+	logs, err := clientset.CoreV1().Namespaces().GetLogs(namespace, logOptions).Stream(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	defer logs.Close()
+
+	logData, err := ioutil.ReadAll(logs)
+	if err != nil {
+		return "", err
+	}
+
+	return string(logData), nil
+}
 
 // applyConfigFile applies a single Kubernetes configuration file
 func applyConfigFile(clientset *kubernetes.Clientset, namespace, configFilePath string) error {
@@ -51,39 +94,4 @@ func applyConfigFile(clientset *kubernetes.Clientset, namespace, configFilePath 
 	}
 
 	return nil
-}
-
-// getErrorLogs retrieves error logs from all pods in a namespace
-func getErrorLogs(clientset *kubernetes.Clientset, namespace string) string {
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-	Expect(err).To(BeNil(), "Error getting pods: %v", err)
-
-	var errorLogs string
-
-	for _, pod := range pods.Items {
-		logs, err := getPodLogs(clientset, namespace, pod.Name)
-		Expect(err).To(BeNil(), "Error getting logs for pod %s: %v", pod.Name, err)
-
-		// Append logs to the overall errorLogs string
-		errorLogs += fmt.Sprintf("Error logs for pod %s:\n%s\n", pod.Name, logs)
-	}
-
-	return errorLogs
-}
-
-// getPodLogs retrieves logs from a pod
-func getPodLogs(clientset *kubernetes.Clientset, namespace, podName string) (string, error) {
-	podLogOptions := &corev1.PodLogOptions{}
-	podLogs, err := clientset.CoreV1().Pods(namespace).GetLogs(podName, podLogOptions).Stream(context.TODO())
-	if err != nil {
-		return "", err
-	}
-	defer podLogs.Close()
-
-	logData, err := ioutil.ReadAll(podLogs)
-	if err != nil {
-		return "", err
-	}
-
-	return string(logData), nil
 }
