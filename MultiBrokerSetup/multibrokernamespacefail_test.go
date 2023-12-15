@@ -1,7 +1,6 @@
 package MultiBrokerSetup_test
 
 import (
-	"MultiBrokerSetup"
 	"context"
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
