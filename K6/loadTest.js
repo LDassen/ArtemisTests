@@ -26,8 +26,8 @@ export default function () {
     console.log('Sending message to the queue:', queueName, 'Message:', messagePayload);
 
     // Send a message to the queue
-    // const sendMessageResponse = http.post(`${BASE_URL}/queues/${queueName}/send`, messagePayload, { timeout: "60s"}, { auth: credentials });
-    const sendMessageResponse = http.post(`${BASE_URL}/jolokia/exec/org.apache.activemq.artemis:broker=\"artemis-broker\",component=addresses,address=\"TESTKUBE\"/sendMessage(java.lang.String)`,{ timeout: "60s", auth: credentials });
+    const sendMessageResponse = http.post(`${BASE_URL}/queues/${queueName}/send`, messagePayload, { timeout: "60s"}, { auth: credentials });
+    // const sendMessageResponse = http.post(`${BASE_URL}/jolokia/exec/org.apache.activemq.artemis:broker=\"artemis-broker\",component=addresses,address=\"TESTKUBE\"/sendMessage(java.lang.String)`,{ timeout: "60s", auth: credentials });
     
     console.log('Response status:', sendMessageResponse.status);
 
