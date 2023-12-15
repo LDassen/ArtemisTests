@@ -11,7 +11,7 @@ import (
 var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func() {
 	It("should apply a configuration file and retrieve error logs", func() {
 		namespace := "unexisting-namespace"
-		configFilePath := "ex-aao.yaml" // Change this to the path of your single configuration file
+		configFilePath := "./ex-aao.yaml" // Change this to the path of your single configuration file
 
 		// Execute kubectl apply command
 		cmd := exec.Command("kubectl", "apply", "-f", configFilePath, "--namespace", namespace)
