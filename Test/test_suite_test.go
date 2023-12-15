@@ -1,4 +1,4 @@
-package test_test
+package <folder_name>_test
 
 import (
 	"testing"
