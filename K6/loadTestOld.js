@@ -7,7 +7,7 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';
+  const url = 'http://10.204.0.53:61616';
   const queueName = 'TESTKUBE';
   const message = 'Hello, Core!';
   const user = 'amq';
