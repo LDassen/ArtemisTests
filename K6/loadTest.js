@@ -1,7 +1,7 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.0.36:61616';
+const BASE_URL = 'http://10.204.0.53:61616';
 
 export const options = {
   stages: [
