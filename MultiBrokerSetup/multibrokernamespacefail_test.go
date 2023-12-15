@@ -94,3 +94,20 @@ func applyConfigFile(clientset *kubernetes.Clientset, namespace, configFilePath 
 
 	return nil
 }
+
+// getPodLogs retrieves logs from a pod
+func getPodLogs(clientset *kubernetes.Clientset, namespace, podName string) (string, error) {
+	podLogOptions := &corev1.PodLogOptions{}
+	podLogs, err := clientset.CoreV1().Pods(namespace).GetLogs(podName, podLogOptions).Stream(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+
+	logData, err := ioutil.ReadAll(podLogs)
+	if err != nil {
+		return "", err
+	}
+
+	return string(logData), nil
+}
