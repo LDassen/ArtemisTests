@@ -29,7 +29,7 @@ export default function () {
       `body=${messagePayload}`,
       {
         headers: {
-          Authorization: `Basic ${btoa(ARTEMIS_CREDENTIALS)}`,
+          Authorization: `Basic ${ARTEMIS_CREDENTIALS}`,
         },
       }
     );
