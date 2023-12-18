@@ -1,8 +1,6 @@
 package MultiBrokerSetup_test
 
 import (
-	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
