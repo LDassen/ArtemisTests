@@ -1,7 +1,6 @@
 package MultiBrokerSetup_test
 
 import (
-	"context"
 	"fmt"
 	"os/exec"
 
@@ -9,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Deploying to Non-existing Namespace", func() {
@@ -20,7 +18,7 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).NotTo(HaveOccurred())
 
-		clientset, err = kubernetes.NewForConfig(config)
+		_, err = kubernetes.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
