@@ -1,37 +1,47 @@
+import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.0.47:61616';  // Correct Artemis management URL
-const QUEUE_NAME = 'TESTKUBE';              // Replace with your queue name
-const ARTEMIS_CREDENTIALS = 'artemis:artemis';      // Replace with your credentials
+const BASE_URL = 'http://10.204.0.36:8161';  // Assuming ActiveMQ Artemis is running on port 8161
+const QUEUE_NAME = 'TESTKUBE';  // Replace with the actual queue name
+const ARTEMIS_CREDENTIALS = 'artemis:artemis';  // Replace with your credentials
+
+export const options = {
+  stages: [
+    { duration: '1m', target: 50 }, // Ramp up to 50 virtual users over 1 minute
+    { duration: '1m', target: 50 }, // Stay at 50 virtual users for 1 minute
+    { duration: '1m', target: 0 },  // Ramp down to 0 virtual users over 1 minute
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'], // 95% of requests must complete within 500ms
+  },
+};
 
 export default function () {
-  // Example JSON payload
-  const messagePayload = {
-    text: 'hi, this is a test',
-  };
-  console.log('Message Payload:', JSON.stringify(messagePayload));
+  group('Send Message to Queue', () => {
+    // Prepare the message payload
+    const messagePayload = 'hi, this is a test';
 
-  // Send a message to the queue using Artemis management API
-  const sendMessageResponse = http.post(
-    `${BASE_URL}/console/jolokia/exec/org.apache.activemq.artemis:broker="10.204.0.47",component=addresses,address="${QUEUE_NAME}",subcomponent=queues,routing-type="anycast",queue="${QUEUE_NAME}"/sendMessage`,
-    JSON.stringify(messagePayload),
-    {
-      headers: {
-        'Content-Type': 'application/json',  // Set the content type for JSON payload
-        Authorization: `Basic ${ARTEMIS_CREDENTIALS}`,
-      },
-    }
-  );
+    console.log('Sending message to the queue:', QUEUE_NAME, 'Message:', messagePayload);
 
-  console.log('Request URL:', `${BASE_URL}/console/jolokia/exec/...`);
-  console.log('Request Headers:', { Authorization: `Basic ${ARTEMIS_CREDENTIALS}` });
-  console.log('Response status:', sendMessageResponse.status);
-  console.log('Response body:', sendMessageResponse.body);
+    // Send a message to the queue using ActiveMQ Artemis REST API
+    const sendMessageResponse = http.post(
+      `${BASE_URL}/api/message/${QUEUE_NAME}?type=queue`,
+      `body=${messagePayload}`,
+      {
+        headers: {
+          Authorization: `Basic ${btoa(ARTEMIS_CREDENTIALS)}`,
+        },
+      }
+    );
 
-  // Check if the request was successful
-  if (sendMessageResponse.status === 200) {
-    console.log('Message sent successfully');
-  } else {
-    console.error('Failed to send message:', sendMessageResponse.status, sendMessageResponse.body);
-  }
+    console.log('Response status:', sendMessageResponse.status);
+
+    // Check if the request was successful
+    check(sendMessageResponse, {
+      'Message Sent Successfully': (resp) => resp.status === 200,
+    });
+
+    // Sleep for a short duration to simulate some processing time
+    sleep(0.5);
+  });
 }
