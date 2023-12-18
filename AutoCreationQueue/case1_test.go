@@ -118,7 +118,7 @@ func execCommandInPod(clientset *kubernetes.Clientset, namespace, podName, comma
 
 	return func() (string, error) {
 		return "", nil
-	})
+	}
 }
 
 func TestArtemis(t *testing.T) {
