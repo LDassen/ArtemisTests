@@ -21,7 +21,7 @@ var _ = Describe("Artemis Deployment", func() {
 		// Your test logic here
 
 		// Example: Get the path to the deployment YAML file in the same directory
-		deploymentFile := filepath.Join(".", "deployment.yaml")
+		deploymentFile := filepath.Join(".", "ex-aao.yaml")
 		namespace := "non-existing-namespace"
 		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
 		err := cmd.Run()
