@@ -3,7 +3,6 @@ package AutoCreationQueue_test
 import (
     "bytes"
     "context"
-    "fmt"
     "path/filepath"
 
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,10 +10,9 @@ import (
     "k8s.io/client-go/rest"
     "k8s.io/client-go/tools/clientcmd"
     "k8s.io/client-go/util/homedir"
-    "k8s.io/client-go/util/exec"
+    "k8s.io/client-go/kubernetes/scheme"
+    "k8s.io/client-go/util/remotecommand"
     "k8s.io/api/core/v1"
-    "k8s.io/apimachinery/pkg/runtime"
-    "k8s.io/apimachinery/pkg/util/intstr"
 
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
@@ -48,14 +46,14 @@ var _ = Describe("Artemis Test", func() {
 
         // Execute the Artemis producer command
         execProducerCmd := []string{"./amq-broker/bin/artemis", "producer", "--user", "cgi", "--password", "cgi", "--url", "tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616", "--message-count", "100"}
-        producerOutput, err := execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execProducerCmd)
+        _, err = execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execProducerCmd)
         Expect(err).NotTo(HaveOccurred())
 
         // Logic to verify producer command output (if needed)
 
         // Execute the Artemis queue stat command
         execQueueStatCmd := []string{"./amq-broker/bin/artemis", "queue", "stat", "--url", "tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616", "--user", "cgi", "--password", "cgi", "--maxRows", "200", "--clustered"}
-        queueStatOutput, err := execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execQueueStatCmd)
+        _, err = execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execQueueStatCmd)
         Expect(err).NotTo(HaveOccurred())
 
         // Logic to parse queueStatOutput and verify if 'TEST' queue has 300 messages
@@ -93,9 +91,4 @@ func execCommandInPod(clientset *kubernetes.Clientset, config *rest.Config, podN
     }
 
     return stdout.String(), nil
-}
-
-func main() {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Artemis Test Suite")
 }
