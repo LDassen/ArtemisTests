@@ -4,34 +4,33 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-
+	"strings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/util/wait"
 )
 
 var _ = Describe("Artemis Broker Pods", func() {
 	It("should have the correct number of 'broker' pods running", func() {
-		namespace := "activemq-artemis-operator"
-		expectedPodCount := 1 // Set your expected number of 'broker' pods
+		namespace := "activemq-artemis-brokers"
+		expectedPodCount := 3 // Set your expected number of 'broker' pods
 
-		cmd := exec.Command("kubectl", "get", "pods", "-n", namespace, "--selector=control-plane=controller-manager", "--output=jsonpath={.items[*].metadata.name}")
-		session, err := cmd.CombinedOutput()
+		cmd := exec.Command("kubectl", "get", "pods", "-n", namespace, "-l", "application=ex-aao-app", "--output=json")
+		output, err := cmd.CombinedOutput()
+		Expect(err).To(BeNil(), "Error running kubectl command: %v\nOutput: %s", err, output)
 
-		Expect(err).To(BeNil(), "Error executing kubectl command: %v\nOutput:\n%s", err, session)
-
-		// Debugging statements
-		fmt.Printf("Retrieved pods in namespace %s:\n%s\n", namespace, session)
-
-		// Split the output into pod names
-		podNames := wait.SplitCommaSeparatedList(string(session))
-		actualPodCount := len(podNames)
-
-		for _, podName := range podNames {
-			fmt.Printf("Pod Name: %s\n", podName)
-			// Add more details as needed
+		// Parse JSON output to get pod count
+		podCount := 0
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "\"kind\": \"Pod\"") {
+				podCount++
+			}
 		}
 
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
+		// Debugging statements
+		fmt.Printf("Retrieved %d pods in namespace %s\n", podCount, namespace)
+		fmt.Printf("Output:\n%s\n", output)
+
+		Expect(podCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, podCount)
 	})
 })
