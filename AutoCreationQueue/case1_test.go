@@ -71,7 +71,7 @@ func execCommandInPod(clientset *kubernetes.Clientset, config *rest.Config, podN
         SubResource("exec").
         VersionedParams(&v1.PodExecOptions{
             Command:   command,
-            Container: "your-container-name", // Replace with your container name
+            Container: "ex-aao-ss-0", // Replace with your container name
             Stdout:    true,
             Stderr:    true,
         }, scheme.ParameterCodec)
