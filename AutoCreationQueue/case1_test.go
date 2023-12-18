@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/client-go/util/yaml"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/exec"
 )
@@ -119,7 +118,7 @@ func execCommandInPod(clientset *kubernetes.Clientset, namespace, podName, comma
 
 	return func() (string, error) {
 		return "", nil
-	})
+	}
 }
 
 func TestArtemis(t *testing.T) {
