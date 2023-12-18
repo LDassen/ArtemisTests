@@ -3,7 +3,7 @@ import http from 'k6/http';
 
 const BASE_URL = 'http://10.204.0.36:8161';  // Assuming ActiveMQ Artemis is running on port 8161
 const QUEUE_NAME = 'TESTKUBE';  // Replace with the actual queue name
-const ARTEMIS_CREDENTIALS = 'artemis:artemis';  // Replace with your credentials
+const ARTEMIS_CREDENTIALS = 'cgi:cgi';  // Replace with your credentials
 
 export const options = {
   stages: [
