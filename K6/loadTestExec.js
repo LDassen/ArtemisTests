@@ -13,7 +13,7 @@ export default function () {
 
   // Send a message to the queue using Artemis management API
   const sendMessageResponse = http.post(
-    `${BASE_URL},component=addresses,address="${QUEUE_NAME}",subcomponent=queues,routing-type="anycast",queue="${QUEUE_NAME}"/sendMessage`,
+    `${BASE_URL}/console/jolokia/exec/org.apache.activemq.artemis:broker="10.204.0.47",component=addresses,address="${QUEUE_NAME}",subcomponent=queues,routing-type="anycast",queue="${QUEUE_NAME}"/sendMessage`,
     JSON.stringify(messagePayload),
     {
       headers: {
