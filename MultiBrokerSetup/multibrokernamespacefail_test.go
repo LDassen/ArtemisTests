@@ -1,42 +1,39 @@
-package MultiBrokerSetup_test
+package artemistests
 
 import (
 	"path/filepath"
-
-	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"os/exec"
+	"testing"
 )
 
 var _ = BeforeSuite(func() {
-	// Set up Kubernetes client using in-cluster configuration
-	config, err := rest.InClusterConfig()
-	Expect(err).NotTo(HaveOccurred())
-
-	// You can use an underscore (_) to indicate that the variable is intentionally unused
-	_, err = kubernetes.NewForConfig(config)
-	Expect(err).NotTo(HaveOccurred())
-})
-
-var _ = Describe("Deploying to Non-existing Namespace", func() {
-	It("Should fail to deploy in a non-existing namespace", func() {
-		namespace := "nonexistent-namespace"
-
-		// Get the current directory
-		currentDir, err := filepath.Abs(filepath.Dir("."))
-		Expect(err).NotTo(HaveOccurred())
-
-		// Construct the full path to the deployment file
-		deploymentFile := filepath.Join(currentDir, "ex-aao.yaml")
-
-		// Use kubectl-testkube library to apply manifests
-		err = commands.Apply(deploymentFile, "--namespace="+namespace)
-		Expect(err).To(HaveOccurred()) // Expect an error as the namespace is non-existing
-	})
+	// Set up any prerequisites before the test suite
 })
 
 var _ = AfterSuite(func() {
-	// Clean up resources if needed
+	// Clean up after the test suite
 })
+
+var _ = Describe("Artemis Deployment", func() {
+	It("should fail to apply deployment to a non-existing namespace", func() {
+		// Your test logic here
+
+		// Example: Get the path to the deployment YAML file in the same directory
+		deploymentFile := filepath.Join(".", "deployment.yaml")
+		namespace := "non-existing-namespace"
+		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
+		err := cmd.Run()
+
+		// Expect an error to occur
+		Expect(err).To(HaveOccurred(), "Expected an error but got none")
+	})
+
+	// Add more test cases as needed
+})
+
+func TestArtemis(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Artemis Suite")
+}
