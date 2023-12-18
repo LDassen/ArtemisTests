@@ -31,7 +31,7 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 
 		// Verify that the error indicates a non-existing namespace
 		Expect(err).To(HaveOccurred())
-		Expect(output).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
+		Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
 
 		// Print the command output for debugging
 		fmt.Println("Command output:", string(output))
