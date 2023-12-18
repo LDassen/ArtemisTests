@@ -29,11 +29,13 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
 		output, err := cmd.CombinedOutput()
 
-		// Print the entire command output for debugging
-		fmt.Println("Command output:", string(output))
+		// Print both stdout and stderr for debugging
+		fmt.Println("Command stdout:", string(output))
+		fmt.Println("Command stderr:", err)
 
 		// Verify that the error indicates a non-existing namespace
 		Expect(err).To(HaveOccurred())
+		//Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
 		Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
 	})
 })
