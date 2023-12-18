@@ -1,7 +1,7 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.0.36:8161';  // Assuming ActiveMQ Artemis is running on port 8161
+const BASE_URL = 'http://10.204.0.36:61619';  // Assuming ActiveMQ Artemis is running on port 8161
 const QUEUE_NAME = 'TESTKUBE';  // Replace with the actual queue name
 const ARTEMIS_CREDENTIALS = 'cgi:cgi';  // Replace with your credentials
 
