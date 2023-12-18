@@ -1,21 +1,31 @@
-package AutoCreationQueue_test
+package main_test
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"k8s.io/client-go/util/wait"
+	"k8s.io/client-go/util/wait/remote"
+	"k8s.io/client-go/util/wait/transport"
+	"k8s.io/client-go/util/wait/transport/spdy"
+	"k8s.io/client-go/util/wait/transport/ws"
+	"k8s.io/client-go/util/yaml"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/exec"
+	"k8s.io/client-go/util/wait"
+	"k8s.io/kubernetes/pkg/kubectl/exec"
 )
 
 var _ = Describe("Artemis Test", func() {
@@ -29,8 +39,9 @@ var _ = Describe("Artemis Test", func() {
 		// Initialize Kubernetes client
 		config, err := rest.InClusterConfig()
 		if err != nil {
-			kubeConfigPath := os.Getenv("KUBECONFIG")
-			config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+			home := homedir.HomeDir()
+			kubeconfig := filepath.Join(home, ".kube", "config")
+			config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 			Expect(err).NotTo(HaveOccurred())
 		}
 		kubeClient, err = kubernetes.NewForConfig(config)
@@ -43,7 +54,7 @@ var _ = Describe("Artemis Test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(podList.Items).NotTo(BeEmpty())
 
-		podName := podList.Items[0].Name
+		podName := "ex-aao-ss-0"
 
 		By("Executing command in Artemis pod")
 		execCommandInPod(kubeClient, namespace, podName,
@@ -80,22 +91,48 @@ func execCommandInPod(clientset *kubernetes.Clientset, namespace, podName, comma
 		Param("stdout", "true").
 		Param("stderr", "true").
 		Param("tty", "true").
-		Param("command", "/bin/bash", "-c", command)
+		Param("command", "/bin/bash").
+		Param("-c", command)
 
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	executor := &exec.PodExecutor{}
+	executor.StreamOptions.Tty = true
+	executor.StreamOptions.IOStreams.Out = GinkgoWriter
+	executor.StreamOptions.IOStreams.ErrOut = GinkgoWriter
+
+	err := executor.StreamOptions.Validate()
 	Expect(err).NotTo(HaveOccurred())
 
-	var stdout, stderr bytes.Buffer
-	err = exec.Stream(remotecommand.StreamOptions{
-		IOStreams: remotecommand.IOStreams{
-			Out: &stdout,
-			Err: &stderr,
-		},
-		Tty: true,
+	streamOptions := executor.StreamOptions.Copy()
+	transport, upgrader, err := spdy.RoundTripperFor(streamOptions)
+	Expect(err).NotTo(HaveOccurred())
+
+	request, err := req.URL()
+	Expect(err).NotTo(HaveOccurred())
+	request = request.Scheme("https")
+
+	streamOptions.Upgrade = upgrader.Upgrade
+	streamOptions.Request = request
+
+	podStreamOptions := &exec.PodStreamOptions{
+		IOStreams: streamOptions.IOStreams,
+		Tty:       streamOptions.Tty,
+	}
+
+	streamOptions.Upgrade.Dial = remote.NewDialFunc(transport.Dial)
+
+	podStreamOptions.StreamOptions = streamOptions
+
+	fn := executor.StreamOptions.Upgrade.RoundTripper
+
+	return wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
+		_, _, err := remote.StreamWithOptions(podStreamOptions, fn)
+		if err == transport.ErrStreamPrefixNotFound {
+			return false, nil
+		}
+		return true, err
+	}).Until(func() (string, error) {
+		return "", nil
 	})
-	Expect(err).NotTo(HaveOccurred())
-
-	return stdout.String()
 }
 
 func TestArtemis(t *testing.T) {
