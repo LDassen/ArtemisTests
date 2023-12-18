@@ -4,8 +4,11 @@ import (
 	"path/filepath"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os/exec"
-	"strings"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"k8s.io/client-go/util/kubeconfig"
+	"os"
 	"testing"
 )
 
@@ -24,18 +27,27 @@ var _ = Describe("Artemis Deployment", func() {
 		// Example: Get the path to the deployment YAML file in the same directory
 		deploymentFile := filepath.Join(".", "ex-aao.yaml")
 		namespace := "nonexistent-namespace"
-		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
 
-		// Capture the standard output and standard error
-		output, err := cmd.CombinedOutput()
+		// Load kubeconfig
+		home := homedir.HomeDir()
+		config, err := kubeconfig.LoadKubeConfig(filepath.Join(home, ".kube", "config"))
+		Expect(err).NotTo(HaveOccurred(), "Error loading kubeconfig")
 
-		// Expect an error to occur
+		// Create Kubernetes client
+		clientset, err := kubernetes.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred(), "Error creating Kubernetes client")
+
+		// Read deployment YAML file
+		deployment, err := clientset.AppsV1().Deployments(namespace).CreateFromFile(deploymentFile)
 		Expect(err).To(HaveOccurred(), "Expected an error but got none")
 
-		// Expect the specific error message
+		// Check for the specific error message in the error
 		expectedErrorMessage := "the namespace from the provided object"
-		Expect(strings.Contains(string(output), expectedErrorMessage)).To(BeTrue(),
-			"Expected error message not found in output: "+string(output))
+		Expect(strings.Contains(err.Error(), expectedErrorMessage)).To(BeTrue(),
+			"Expected error message not found in error: "+err.Error())
+
+		// Optionally, you can assert other conditions based on your needs
+		Expect(deployment).To(BeNil(), "Deployment should be nil due to error")
 	})
 
 	// Add more test cases as needed
