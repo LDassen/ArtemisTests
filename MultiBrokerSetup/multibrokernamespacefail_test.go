@@ -33,16 +33,18 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 		Expect(err).To(BeNil(), "Error reading configuration file: %v", err)
 
 		// Apply the configuration file to the namespace
+		var applyErr error
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			err := clientset.CoreV1().RESTClient().
+			result := clientset.CoreV1().RESTClient().
 				Post().
 				Resource("pods").
 				Namespace(namespace).
 				Body(content).
 				Do(context.TODO())
-			return err
+			applyErr = result.Err()
+			return applyErr
 		})
-		Expect(err).ToNot(BeNil(), "Expected an error applying the configuration file")
+		Expect(applyErr).ToNot(BeNil(), "Expected an error applying the configuration file")
 
 		// Retrieve and print error logs (if any)
 		errorLogs := getNamespaceEvents(clientset, namespace)
