@@ -54,6 +54,7 @@ func createKubernetesClient() (*kubernetes.Clientset, error) {
 
 // Helper function to run a command inside a Kubernetes pod using exec
 func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, namespace, command string) (string, error) {
+	// Note: Using metav1.NamespaceDefault for the context parameter
 	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
