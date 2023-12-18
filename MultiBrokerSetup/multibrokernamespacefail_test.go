@@ -34,7 +34,7 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 
 		// Apply the configuration file to the namespace
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			_, err := clientset.CoreV1().RESTClient().
+			err := clientset.CoreV1().RESTClient().
 				Post().
 				Resource("pods").
 				Namespace(namespace).
