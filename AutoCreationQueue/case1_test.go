@@ -1,83 +1,101 @@
 package AutoCreationQueue_test
 
 import (
-	"bytes"
+	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 	"testing"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-var _ = Describe("Artemis Broker", func() {
+var _ = Describe("Artemis Test", func() {
+	var (
+		kubeClient *kubernetes.Clientset
+		namespace  = "activemq-artemis-brokers"
+		ctx        = context.TODO()
+	)
 
-	It("should run a command inside the Artemis broker", func() {
-		// Create Kubernetes client
-		clientset, err := createKubernetesClient()
+	BeforeSuite(func() {
+		// Initialize Kubernetes client
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			kubeConfigPath := os.Getenv("KUBECONFIG")
+			config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+			Expect(err).NotTo(HaveOccurred())
+		}
+		kubeClient, err = kubernetes.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred())
+	})
 
-		// Replace this command with the actual command you want to run inside the broker
-		commandToRun := "./amq-broker/bin/artemis producer --user cgi --password cgi --url tcp://10.204.0.39:61616 --message-count 100"
-
-		// Set the namespace and pod name directly
-		namespace := "activemq-artemis-brokers"
-		podName := "ex-aao-ss-0"
-
-		// Run the command inside the specific Artemis broker pod
-		output, err := runCommandInsideKubernetesPod(clientset, podName, namespace, commandToRun)
+	It("should test Artemis functionality", func() {
+		By("Searching for Artemis pods in the namespace")
+		podList, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 		Expect(err).NotTo(HaveOccurred())
+		Expect(podList.Items).NotTo(BeEmpty())
 
-		// Add your assertions based on the command output
-		Expect(output).To(ContainSubstring("expected-output"))
+		podName := podList.Items[0].Name
+
+		By("Executing command in Artemis pod")
+		execCommandInPod(kubeClient, namespace, podName,
+			"./amq-broker/bin/artemis producer --user cgi --password cgi --url tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616 --message-count 100 --user cgi --password cgi --maxRows 200")
+
+		time.Sleep(5 * time.Second) // Add a delay if needed for the producer to finish
+
+		By("Executing queue stat command in Artemis pod")
+		output := execCommandInPod(kubeClient, namespace, podName,
+			"./amq-broker/bin/artemis queue stat --url tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616 --user cgi --password cgi --maxRows 200 --clustered")
+
+		By("Checking if 'TEST' queue has 300 in its row")
+		lines := strings.Split(output, "\n")
+		found := false
+		for _, line := range lines {
+			if strings.Contains(line, "TEST") && strings.Contains(line, "300") {
+				found = true
+				break
+			}
+		}
+
+		Expect(found).To(BeTrue(), fmt.Sprintf("Expected 'TEST' queue with 300 not found in output:\n%s", output))
 	})
 })
 
-// Helper function to create a Kubernetes client
-func createKubernetesClient() (*kubernetes.Clientset, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
+func execCommandInPod(clientset *kubernetes.Clientset, namespace, podName, command string) string {
+	req := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec").
+		Param("container", "ex-aao-ss-0").
+		Param("stdin", "true").
+		Param("stdout", "true").
+		Param("stderr", "true").
+		Param("tty", "true").
+		Param("command", "/bin/bash", "-c", command)
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	Expect(err).NotTo(HaveOccurred())
 
-	return clientset, nil
-}
-
-// Helper function to run a command inside a Kubernetes pod using exec
-func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, namespace, command string) (string, error) {
-	// Note: Using metav1.NamespaceDefault for the context parameter
-	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	// Create an exec command
-	execCommand := exec.Command("/bin/bash", "-c", command)
-
-	// Set the correct working directory
-	execCommand.Dir = "/home/jboss"
-
-	// Capture the command output
 	var stdout, stderr bytes.Buffer
-	execCommand.Stdout = &stdout
-	execCommand.Stderr = &stderr
+	err = exec.Stream(remotecommand.StreamOptions{
+		IOStreams: remotecommand.IOStreams{
+			Out: &stdout,
+			Err: &stderr,
+		},
+		Tty: true,
+	})
+	Expect(err).NotTo(HaveOccurred())
 
-	// Run the exec command
-	err = execCommand.Run()
-	if err != nil {
-		return "", fmt.Errorf("error executing command: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
-	}
-
-	return stdout.String(), nil
+	return stdout.String()
 }
 
 func TestArtemis(t *testing.T) {
