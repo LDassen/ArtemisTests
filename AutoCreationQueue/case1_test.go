@@ -7,13 +7,13 @@ import (
 	"os/exec"
 	"testing"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	v1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Artemis Broker", func() {
@@ -71,7 +71,7 @@ func getPodInfo() (string, string, error) {
 
 // Helper function to run a command inside a Kubernetes pod using exec
 func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, namespace, command string) (string, error) {
-	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, v1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -79,10 +79,7 @@ func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, nam
 	containerName := pod.Spec.Containers[0].Name
 
 	// Create an exec command
-	execCommand := exec.Command("sh", "-c", command)
-
-	// Set the correct working directory
-	execCommand.Dir = "/home/jboss"
+	execCommand := exec.Command("kubectl", "exec", "-it", podName, "-n", namespace, "--", "/bin/bash", "-c", command)
 
 	// Capture the command output
 	var stdout, stderr bytes.Buffer
