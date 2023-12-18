@@ -1,54 +1,59 @@
-package MultiBrokerSetup_test
+package MultiBrokerSetup
 
 import (
-	"fmt"
-	"os/exec"
 	"path/filepath"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+	"k8s.io/client-go/util/kubeconfig"
+	"os"
+	"testing"
 )
 
 var _ = BeforeSuite(func() {
-	// Set up Kubernetes client using in-cluster configuration
-	config, err := rest.InClusterConfig()
-	Expect(err).NotTo(HaveOccurred())
-
-	// You can use an underscore (_) to indicate that the variable is intentionally unused
-	_, err = kubernetes.NewForConfig(config)
-	Expect(err).NotTo(HaveOccurred())
-})
-
-var _ = Describe("Deploying to Non-existing Namespace", func() {
-	It("Should fail to deploy in a non-existing namespace", func() {
-		namespace := "nonexistent-namespace"
-
-		// Get the current directory
-		currentDir, err := filepath.Abs(filepath.Dir("."))
-		Expect(err).NotTo(HaveOccurred())
-
-		// Construct the full path to the deployment file
-		deploymentFile := filepath.Join(currentDir, "ex-aao.yaml")
-
-		// Use exec.LookPath to find kubectl in the system's PATH
-		kubectlPath, err := exec.LookPath("kubectl")
-		Expect(err).NotTo(HaveOccurred())
-
-		cmd := exec.Command(kubectlPath, "apply", "-f", deploymentFile, "--namespace="+namespace)
-		output, err := cmd.CombinedOutput()
-
-		// Print both stdout and stderr for debugging
-		fmt.Println("Command stdout:", string(output))
-		fmt.Println("Command stderr:", err)
-
-		// Verify that the error indicates a non-existing namespace
-		Expect(err).To(HaveOccurred())
-		Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
-	})
+	// Set up any prerequisites before the test suite
 })
 
 var _ = AfterSuite(func() {
-	// Clean up resources if needed
+	// Clean up after the test suite
 })
+
+var _ = Describe("Artemis Deployment", func() {
+	It("should fail to apply deployment to a non-existing namespace", func() {
+		// Your test logic here
+
+		// Example: Get the path to the deployment YAML file in the same directory
+		deploymentFile := filepath.Join(".", "ex-aao.yaml")
+		namespace := "nonexistent-namespace"
+
+		// Load kubeconfig
+		home := homedir.HomeDir()
+		config, err := kubeconfig.LoadKubeConfig(filepath.Join(home, ".kube", "config"))
+		Expect(err).NotTo(HaveOccurred(), "Error loading kubeconfig")
+
+		// Create Kubernetes client
+		clientset, err := kubernetes.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred(), "Error creating Kubernetes client")
+
+		// Read deployment YAML file
+		deployment, err := clientset.AppsV1().Deployments(namespace).CreateFromFile(deploymentFile)
+		Expect(err).To(HaveOccurred(), "Expected an error but got none")
+
+		// Check for the specific error message in the error
+		expectedErrorMessage := "the namespace from the provided object"
+		Expect(strings.Contains(err.Error(), expectedErrorMessage)).To(BeTrue(),
+			"Expected error message not found in error: "+err.Error())
+
+		// Optionally, you can assert other conditions based on your needs
+		Expect(deployment).To(BeNil(), "Deployment should be nil due to error")
+	})
+
+	// Add more test cases as needed
+})
+
+func TestArtemis(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Artemis Suite")
+}
