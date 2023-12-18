@@ -1,6 +1,6 @@
 import http from 'k6/http';
 
-const BASE_URL = 'http://10.204.0.47:61619';  // Correct Artemis management URL
+const BASE_URL = 'http://10.204.0.47:61616';  // Correct Artemis management URL
 const QUEUE_NAME = 'TESTKUBE';              // Replace with your queue name
 const ARTEMIS_CREDENTIALS = 'artemis:artemis';      // Replace with your credentials
 
