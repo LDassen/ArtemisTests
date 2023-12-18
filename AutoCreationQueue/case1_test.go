@@ -2,16 +2,11 @@ package AutoCreationQueue_test
 
 import (
     "bytes"
-    "context"
-    "path/filepath"
 
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
-    "k8s.io/client-go/tools/clientcmd"
-    "k8s.io/client-go/util/homedir"
     "k8s.io/client-go/kubernetes/scheme"
-    "k8s.io/client-go/util/exec"
+    "k8s.io/client-go/util/remotecommand"
     "k8s.io/api/core/v1"
 
     . "github.com/onsi/ginkgo/v2"
@@ -26,37 +21,33 @@ var _ = Describe("Artemis Test", func() {
 
     BeforeEach(func() {
         // Setup Kubernetes config and client
-        var kubeconfig string
-        if home := homedir.HomeDir(); home != "" {
-            kubeconfig = filepath.Join(home, ".kube", "config")
-        }
-        config, _ = clientcmd.BuildConfigFromFlags("", kubeconfig)
-        clientset, _ = kubernetes.NewForConfig(config)
+        // Assuming the configuration is set correctly in your environment
+        var err error
+        config, err = rest.InClusterConfig()
+        Expect(err).NotTo(HaveOccurred())
+        clientset, err = kubernetes.NewForConfig(config)
+        Expect(err).NotTo(HaveOccurred())
     })
 
     It("should send messages and check queue", func() {
         // Find the Artemis broker pod
         pods, err := clientset.CoreV1().Pods("activemq-artemis-brokers").List(context.TODO(), metav1.ListOptions{
-            LabelSelector: "application=ex-aao-app", // Using your provided label selector
+            LabelSelector: "application=ex-aao-app",
         })
         Expect(err).NotTo(HaveOccurred())
         Expect(pods.Items).NotTo(BeEmpty())
 
-        podName := pods.Items[0].Name // Assuming you want to use the first pod
+        podName := pods.Items[0].Name
 
         // Execute the Artemis producer command
         execProducerCmd := []string{"./amq-broker/bin/artemis", "producer", "--user", "cgi", "--password", "cgi", "--url", "tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616", "--message-count", "100"}
         _, err = execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execProducerCmd)
         Expect(err).NotTo(HaveOccurred())
 
-        // Logic to verify producer command output (if needed)
-
         // Execute the Artemis queue stat command
         execQueueStatCmd := []string{"./amq-broker/bin/artemis", "queue", "stat", "--url", "tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616", "--user", "cgi", "--password", "cgi", "--maxRows", "200", "--clustered"}
         _, err = execCommandInPod(clientset, config, podName, "activemq-artemis-brokers", execQueueStatCmd)
         Expect(err).NotTo(HaveOccurred())
-
-        // Logic to parse queueStatOutput and verify if 'TEST' queue has 300 messages
     })
 })
 
