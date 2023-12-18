@@ -1,4 +1,4 @@
-package <folder_name>_test
+package AutoCreationQueue_test
 
 import (
 	"testing"
