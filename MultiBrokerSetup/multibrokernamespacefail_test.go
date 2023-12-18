@@ -36,18 +36,15 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 		// Apply the configuration file to the namespace
 		var applyErr error
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			result := clientset.CoreV1().RESTClient().
+			_, err := clientset.CoreV1().RESTClient().
 				Post().
 				Resource("pods").
 				Namespace(namespace).
 				Body(content).
 				Do(context.TODO())
-			if result.StatusCode() != http.StatusOK && result.StatusCode() != http.StatusCreated {
-				applyErr = fmt.Errorf("unexpected HTTP status code: %d", result.StatusCode())
-			}
-			return applyErr
+			return err
 		})
-		Expect(applyErr).ToNot(BeNil(), "Expected an error applying the configuration file")
+		Expect(err).ToNot(BeNil(), "Expected an error applying the configuration file")
 
 		// Retrieve and print error logs (if any)
 		errorLogs := getNamespaceEvents(clientset, namespace)
