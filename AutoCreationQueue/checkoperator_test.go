@@ -1,38 +1,62 @@
-package <folder_name>_test
+package AutoCreationQueue_test
 
 import (
-	"context"
-	"fmt"
+	"os/exec"
+	"strings"
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Artemis Broker Pods", func() {
-	It("should have the correct number of 'broker' pods running", func() {
-		config, err := rest.InClusterConfig()
-		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
+var _ = Describe("Artemis Broker", func() {
+	var (
+		brokerCmd *exec.Cmd
+	)
 
-		clientset, err := kubernetes.NewForConfig(config)
-		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
+	BeforeSuite(func() {
+		// Start the Artemis broker as a separate process
+		brokerCmd = exec.Command("artemis", "run")
+		err := brokerCmd.Start()
+		Expect(err).NotTo(HaveOccurred())
+	})
 
-		namespace := "activemq-artemis-operator"
-		expectedPodCount := 1 // Set your expected number of 'broker' pods
+	AfterSuite(func() {
+		// Stop the Artemis broker after all tests are finished
+		err := brokerCmd.Process.Kill()
+		Expect(err).NotTo(HaveOccurred())
+	})
 
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "control-plane=controller-manager"})
-		Expect(err).To(BeNil(), "Error getting pods: %v", err)
+	It("should run a command inside the Artemis broker", func() {
+		// Replace this command with the actual command you want to run inside the broker
+		commandToRun := "your-command-here"
 
-		// Debugging statements
-		fmt.Printf("Retrieved %d pods in namespace %s\n", len(pods.Items), namespace)
-		for _, pod := range pods.Items {
-			fmt.Printf("Pod Name: %s\n", pod.Name)
-			// Add more details as needed
-		}
+		// Run the command inside the Artemis broker
+		output, err := runCommandInsideBroker(commandToRun)
+		Expect(err).NotTo(HaveOccurred())
 
-		actualPodCount := len(pods.Items)
-
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
+		// Add your assertions based on the command output
+		Expect(output).To(ContainSubstring("expected-output"))
 	})
 })
+
+// Helper function to run a command inside the Artemis broker
+func runCommandInsideBroker(command string) (string, error) {
+	// Replace this with the actual Artemis broker URL and credentials
+	brokerURL := "tcp://localhost:61616"
+	username := "your-username"
+	password := "your-password"
+
+	// Construct the Artemis command to run a command inside the broker
+	artemisCmd := exec.Command("artemis", "producer", "--message", command, "--destination", "exampleQueue", "--url", brokerURL, "--user", username, "--password", password)
+
+	// Run the Artemis command and capture the output
+	output, err := artemisCmd.CombinedOutput()
+	return string(output), err
+}
+
+func TestArtemis(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Artemis Suite")
+}
+
