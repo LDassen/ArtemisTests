@@ -2,7 +2,7 @@ import http from 'k6/http';
 
 const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';  // Replace with your Artemis management URL
 const QUEUE_NAME = 'TESTKUBE';              // Replace with your queue name
-const ARTEMIS_CREDENTIALS = 'cgi:cgi';  // Replace with your credentials
+const ARTEMIS_CREDENTIALS = 'cgi:cgi';      // Replace with your credentials
 
 export default function () {
   // Send a message to the queue using Artemis management API
@@ -11,7 +11,7 @@ export default function () {
     null,
     {
       headers: {
-        Authorization: `Basic ${btoa(ARTEMIS_CREDENTIALS)}`,
+        Authorization: `Basic ${ARTEMIS_CREDENTIALS}`,
       },
     }
   );
