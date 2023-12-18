@@ -1,23 +1,37 @@
 package AutoCreationQueue_test
 
 import (
+	"fmt"
+	"os/exec"
+	"strings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
-	"os/exec"
+
 )
 
-var _ = Describe("ActiveMQ Artemis Brokers Pods", func() {
-	const namespace = "activemq-artemis-brokers"
+var _ = Describe("Artemis Broker Pods", func() {
+	It("should have the correct number of 'broker' pods running", func() {
+		namespace := "activemq-artemis-brokers"
+		expectedPodCount := 3 // Set your expected number of 'broker' pods
 
-	Context("When querying ActiveMQ Artemis Brokers pods", func() {
-		It("Should retrieve a list of pods", func() {
-			cmd := exec.Command("kubectl", "get", "pods", "-n", namespace)
-			session := commands.Execute(cmd)
-			Expect(session.ExitCode).To(Equal(0), "kubectl command failed. Output:\n%s", session.Out.Contents())
+		cmd := exec.Command("kubectl", "get", "pods", "-n", namespace, "-l", "application=ex-aao-app", "--output=json")
+		output, err := cmd.CombinedOutput()
+		Expect(err).To(BeNil(), "Error running kubectl command: %v\nOutput: %s", err, output)
 
-			// Add more assertions as needed based on the output
-			// For example, you can use Gomega matchers to check the expected output or count of pods.
-		})
+		// Parse JSON output to get pod count
+		podCount := 0
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "\"kind\": \"Pod\"") {
+				podCount++
+			}
+		}
+
+		// Debugging statements
+		fmt.Printf("Retrieved %d pods in namespace %s\n", podCount, namespace)
+		fmt.Printf("Output:\n%s\n", output)
+
+		Expect(podCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, podCount)
 	})
 })
