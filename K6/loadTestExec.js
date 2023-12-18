@@ -1,9 +1,10 @@
 import { check, group, sleep } from 'k6';
 import http from 'k6/http';
+import JMS from javax.jms.Connection;
 
-const BASE_URL = 'http://10.204.0.36:61619';  // Assuming ActiveMQ Artemis is running on port 8161
+const BASE_URL = 'http://10.204.0.57:61616';  // Assuming ActiveMQ Artemis is running on port 8161
 const QUEUE_NAME = 'TESTKUBE';  // Replace with the actual queue name
-const ARTEMIS_CREDENTIALS = 'cgi:cgi';  // Replace with your credentials
+const ARTEMIS_CREDENTIALS = 'artemis:artemis';  // Replace with your credentials
 
 export const options = {
   stages: [
