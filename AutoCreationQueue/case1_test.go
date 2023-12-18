@@ -83,22 +83,3 @@ func execCommandInPod(clientset *kubernetes.Clientset, config *rest.Config, podN
 
     return stdout.String(), nil
 }
-
-
-# some more ls aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
-alias kall='kubectl get all -n kafka-brokers'
-alias kalld='kubectl get all -n default'
-# alias kedit='kubectl edit kafkaclusters kafka-brokers -n kafka-brokers-l'
-alias kedit='kubectl edit kafkacluster kafka-brokers -n kafka-brokers'
-alias kafka='cd /mnt/c/Users/laurent.dassen/Documents/Github/CMS-MCI/kafka'
-alias mci='cd /mnt/c/Users/laurent.dassen/Documents/Github/mci-general/container-manifests'
-alias artemis='cd /mnt/c/Users/laurent.dassen/Documents/Github/CMS-MCI/artemis'
-alias tkube='cd /mnt/c/Users/laurent.dassen/Documents/Github/CMS-MCI/testkube'
-
-# Current-context
-alias contextmci='kubectl config use-context cms-mci-cluster'
-alias contextrancher='kubectl config use-context rancher-desktop'
-alias contextdev='kubectl config use-context cms-k8s-dev-aks001'
