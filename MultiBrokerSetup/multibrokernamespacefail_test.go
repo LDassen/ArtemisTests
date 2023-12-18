@@ -21,11 +21,17 @@ var _ = BeforeSuite(func() {
 	_, err = kubernetes.NewForConfig(config)
 	Expect(err).NotTo(HaveOccurred())
 
-	// Download kubectl if not already present
-	if err := downloadKubectl(); err != nil {
-		Fail(fmt.Sprintf("Failed to download kubectl: %v", err))
-	}
+	// Download kubectl
+	cmd := exec.Command("curl", "-LO", "https://storage.googleapis.com/kubernetes-release/release/v1.23.0/bin/linux/amd64/kubectl")
+	err = cmd.Run()
+	Expect(err).NotTo(HaveOccurred())
+
+	// Move kubectl to the desired location
+	kubectlPath := "/usr/local/bin/kubectl"
+	_, err = exec.Command("mv", "kubectl", kubectlPath).CombinedOutput()
+	Expect(err).NotTo(HaveOccurred())
 })
+
 
 var _ = Describe("Deploying to Non-existing Namespace", func() {
 	It("Should fail to deploy in a non-existing namespace", func() {
