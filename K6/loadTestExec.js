@@ -1,6 +1,6 @@
 import http from 'k6/http';
 
-const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:8161';  // Correct Artemis management URL
+const BASE_URL = 'http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619';  // Correct Artemis management URL
 const QUEUE_NAME = 'TESTKUBE';              // Replace with your queue name
 const ARTEMIS_CREDENTIALS = 'cgi:cgi';      // Replace with your credentials
 
