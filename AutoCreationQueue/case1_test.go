@@ -26,7 +26,7 @@ var _ = Describe("Artemis Broker", func() {
 // Helper function to run a command inside a Kubernetes pod
 func runCommandInsideKubernetesPod(podName, command string) (string, error) {
 	// Construct the kubectl exec command to run a command inside the pod
-	kubectlCmd := exec.Command("kubectl", "exec", "-it", "pod/"podName, "--", "/bin/bash", command)
+	kubectlCmd := exec.Command("kubectl", "exec", "-it", "pod", podName, "--", "/bin/bash", command)
 
 	// Run the kubectl exec command and capture the output
 	output, err := kubectlCmd.CombinedOutput()
