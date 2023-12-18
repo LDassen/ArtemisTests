@@ -2,6 +2,7 @@ package MultiBrokerSetup_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,7 +24,13 @@ var _ = BeforeSuite(func() {
 var _ = Describe("Deploying to Non-existing Namespace", func() {
 	It("Should fail to deploy in a non-existing namespace", func() {
 		namespace := "nonexistent-namespace"
-		deploymentFile := "ex-aao.yaml"
+
+		// Get the current directory
+		currentDir, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+
+		// Construct the full path to the deployment file
+		deploymentFile := currentDir + "/ex-aao.yaml"
 
 		// Apply the deployment file in the non-existing namespace
 		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
@@ -35,7 +42,6 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 
 		// Verify that the error indicates a non-existing namespace
 		Expect(err).To(HaveOccurred())
-		//Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
 		Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
 	})
 })
