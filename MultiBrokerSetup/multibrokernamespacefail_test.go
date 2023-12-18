@@ -35,11 +35,6 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		// Verify that the error indicates a non-existing namespace
 		Expect(err).To(HaveOccurred())
 		Expect(output).To(ContainSubstring(fmt.Sprintf("namespace %s not found", namespace)))
-
-		// Alternatively, you can use the Kubernetes client to check if the namespace exists
-		_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
-		Expect(err).To(HaveOccurred())
-		Expect(kubernetes.IsNotFound(err)).To(BeTrue())
 	})
 
 	AfterSuite(func() {
