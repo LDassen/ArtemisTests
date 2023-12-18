@@ -34,19 +34,13 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 
 		// Apply the configuration file to the namespace
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			response, err := clientset.CoreV1().RESTClient().
+			_, err := clientset.CoreV1().RESTClient().
 				Post().
 				Resource("pods").
 				Namespace(namespace).
 				Body(content).
 				Do(context.TODO())
-			if err != nil {
-				return err
-			}
-
-			// Process the response if needed
-
-			return nil
+			return err
 		})
 		Expect(err).ToNot(BeNil(), "Expected an error applying the configuration file")
 
