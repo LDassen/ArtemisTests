@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
@@ -41,7 +42,9 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 				Namespace(namespace).
 				Body(content).
 				Do(context.TODO())
-			applyErr = result.Err()
+			if result.StatusCode() != http.StatusOK && result.StatusCode() != http.StatusCreated {
+				applyErr = fmt.Errorf("unexpected HTTP status code: %d", result.StatusCode())
+			}
 			return applyErr
 		})
 		Expect(applyErr).ToNot(BeNil(), "Expected an error applying the configuration file")
