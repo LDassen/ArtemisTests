@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -32,7 +34,7 @@ var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func(
 
 		// Apply the configuration file to the namespace
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			_, err = clientset.CoreV1().RESTClient().
+			_, err := clientset.CoreV1().RESTClient().
 				Post().
 				Resource("pods").
 				Namespace(namespace).
