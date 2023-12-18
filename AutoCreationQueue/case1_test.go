@@ -6,6 +6,8 @@ import (
 	"strings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
+
 )
 
 var _ = Describe("Artemis Broker Pods", func() {
