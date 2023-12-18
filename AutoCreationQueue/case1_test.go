@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
-	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands/common"
 	"os/exec"
 )
 
