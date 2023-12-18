@@ -1,6 +1,8 @@
 package AutoCreationQueue_test
 
 import (
+	"bytes"
+	"fmt"
 	"os/exec"
 	"testing"
 
@@ -11,11 +13,15 @@ import (
 var _ = Describe("Artemis Broker", func() {
 
 	It("should run a command inside the Artemis broker", func() {
-		// Replace this command with the actual command you want to run inside the broker
-		commandToRun := "./amq-broker/bin/artemis producer --user cgi --password cgi --url tcp://7.65.87.2:61616 --message-count 100"
+		// Replace these values with your actual Kubernetes configuration
+		podName := "artemis-broker-pod-name"
+		namespace := "default"
 
-		// Run the command inside the specific Artemis broker pod using kubectl exec
-		output, err := runCommandInsideKubernetesPod("artemis-broker-pod-name", commandToRun)
+		// Replace this command with the actual command you want to run inside the broker
+		commandToRun := "./amq-broker/bin/artemis producer --user cgi --password cgi --url tcp://10.204.0.39:61616 --message-count 100"
+
+		// Run the command inside the specific Artemis broker pod
+		output, err := runCommandInsideKubernetesPod(podName, namespace, commandToRun)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Add your assertions based on the command output
@@ -23,14 +29,23 @@ var _ = Describe("Artemis Broker", func() {
 	})
 })
 
-// Helper function to run a command inside a Kubernetes pod
-func runCommandInsideKubernetesPod(podName, command string) (string, error) {
-	// Construct the kubectl exec command to run a command inside the pod
-	kubectlCmd := exec.Command("kubectl", "exec", "-it", "pod", podName, "--", "/bin/bash", command)
+// Helper function to run a command inside a Kubernetes pod using exec
+func runCommandInsideKubernetesPod(podName, namespace, command string) (string, error) {
+	// Create an exec command
+	execCommand := exec.Command("kubectl", "exec", "-it", "pod", podName, namespace, "--", "/bin/bash", command)
 
-	// Run the kubectl exec command and capture the output
-	output, err := kubectlCmd.CombinedOutput()
-	return string(output), err
+	// Capture the command output
+	var stdout, stderr bytes.Buffer
+	execCommand.Stdout = &stdout
+	execCommand.Stderr = &stderr
+
+	// Run the exec command
+	err := execCommand.Run()
+	if err != nil {
+		return "", fmt.Errorf("error executing command: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
+	}
+
+	return stdout.String(), nil
 }
 
 func TestArtemis(t *testing.T) {
