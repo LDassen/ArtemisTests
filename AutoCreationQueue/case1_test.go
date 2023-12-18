@@ -2,7 +2,6 @@ package AutoCreationQueue_test
 
 import (
 	"os/exec"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -10,9 +9,6 @@ import (
 )
 
 var _ = Describe("Artemis Broker", func() {
-	var (
-		brokerCmd *exec.Cmd
-	)
 
 	It("should run a command inside the Artemis broker", func() {
 		// Replace this command with the actual command you want to run inside the broker
@@ -46,4 +42,3 @@ func TestArtemis(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Artemis Suite")
 }
-
