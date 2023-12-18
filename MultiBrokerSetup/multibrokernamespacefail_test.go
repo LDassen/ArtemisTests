@@ -20,16 +20,6 @@ var _ = BeforeSuite(func() {
     Expect(err).NotTo(HaveOccurred())
 })
 
-var _ = BeforeSuite(func() {
-    // Set up Kubernetes client using in-cluster configuration
-    config, err := rest.InClusterConfig()
-    Expect(err).NotTo(HaveOccurred())
-
-    // You can use an underscore (_) to indicate that the variable is intentionally unused
-    _, err = kubernetes.NewForConfig(config)
-    Expect(err).NotTo(HaveOccurred())
-})
-
 var _ = Describe("Deploying to Non-existing Namespace", func() {
     It("Should fail to deploy in a non-existing namespace", func() {
         namespace := "nonexistent-namespace"
