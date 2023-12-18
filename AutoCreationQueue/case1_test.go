@@ -1,23 +1,37 @@
-package AutoCreationQueue_test
+package your_test_package
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
+	"context"
+	"fmt"
 	"os/exec"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"k8s.io/client-go/util/wait"
 )
 
-var _ = Describe("ActiveMQ Artemis Brokers Pods", func() {
-	const namespace = "activemq-artemis-brokers"
+var _ = Describe("Artemis Broker Pods", func() {
+	It("should have the correct number of 'broker' pods running", func() {
+		namespace := "activemq-artemis-operator"
+		expectedPodCount := 1 // Set your expected number of 'broker' pods
 
-	Context("When querying ActiveMQ Artemis Brokers pods", func() {
-		It("Should retrieve a list of pods", func() {
-			cmd := exec.Command("kubectl", "get", "pods", "-n", namespace)
-			session := commands.Execute(cmd)
-			Expect(session.ExitCode).To(Equal(0), "kubectl command failed. Output:\n%s", session.Out.Contents())
+		cmd := exec.Command("kubectl", "get", "pods", "-n", namespace, "--selector=control-plane=controller-manager", "--output=jsonpath={.items[*].metadata.name}")
+		session, err := cmd.CombinedOutput()
 
-			// Add more assertions as needed based on the output
-			// For example, you can use Gomega matchers to check the expected output or count of pods.
-		})
+		Expect(err).To(BeNil(), "Error executing kubectl command: %v\nOutput:\n%s", err, session)
+
+		// Debugging statements
+		fmt.Printf("Retrieved pods in namespace %s:\n%s\n", namespace, session)
+
+		// Split the output into pod names
+		podNames := wait.SplitCommaSeparatedList(string(session))
+		actualPodCount := len(podNames)
+
+		for _, podName := range podNames {
+			fmt.Printf("Pod Name: %s\n", podName)
+			// Add more details as needed
+		}
+
+		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
 	})
 })
