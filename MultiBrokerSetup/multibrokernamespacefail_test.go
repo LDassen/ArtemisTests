@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,6 +22,11 @@ var _ = BeforeSuite(func() {
 	// You can use an underscore (_) to indicate that the variable is intentionally unused
 	_, err = kubernetes.NewForConfig(config)
 	Expect(err).NotTo(HaveOccurred())
+
+	// Download kubectl if not already present
+	if err := downloadKubectl(); err != nil {
+		Fail(fmt.Sprintf("Failed to download kubectl: %v", err))
+	}
 })
 
 var _ = Describe("Deploying to Non-existing Namespace", func() {
@@ -26,14 +34,15 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		namespace := "nonexistent-namespace"
 
 		// Get the current directory
-		currentDir, err := os.Getwd()
+		currentDir, err := filepath.Abs(filepath.Dir("."))
 		Expect(err).NotTo(HaveOccurred())
 
 		// Construct the full path to the deployment file
-		deploymentFile := currentDir + "/ex-aao.yaml"
+		deploymentFile := filepath.Join(currentDir, "ex-aao.yaml")
 
-		// Apply the deployment file in the non-existing namespace
-		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
+		// Use the downloaded kubectl binary within the pod
+		kubectlPath := "/path/to/kubectl"
+		cmd := exec.Command(kubectlPath, "apply", "-f", deploymentFile, "--namespace="+namespace)
 		output, err := cmd.CombinedOutput()
 
 		// Print both stdout and stderr for debugging
@@ -49,3 +58,35 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 var _ = AfterSuite(func() {
 	// Clean up resources if needed
 })
+
+// downloadKubectl downloads kubectl binary if not already present
+func downloadKubectl() error {
+	// Check if kubectl is already present
+	kubectlPath, err := exec.LookPath("kubectl")
+	if err == nil {
+		fmt.Println("kubectl is already present:", kubectlPath)
+		return nil
+	}
+
+	// Download kubectl based on the OS
+	var downloadURL string
+	switch runtime.GOOS {
+	case "linux":
+		downloadURL = "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+	case "darwin":
+		downloadURL = "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl"
+	case "windows":
+		downloadURL = "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/windows/amd64/kubectl.exe"
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	// Download kubectl
+	downloadCmd := exec.Command("sh", "-c", fmt.Sprintf("curl -LO %s && chmod +x kubectl && mv kubectl /path/to/", downloadURL))
+	downloadOutput, downloadErr := downloadCmd.CombinedOutput()
+	if downloadErr != nil {
+		return fmt.Errorf("failed to download kubectl: %v\nOutput:\n%s", downloadErr, string(downloadOutput))
+	}
+
+	return nil
+}
