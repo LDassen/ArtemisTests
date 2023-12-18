@@ -1,11 +1,11 @@
-package your_test_package
+package AutoCreationQueue_test
 
 import (
 	"context"
 	"fmt"
 	"os/exec"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/util/wait"
 )
