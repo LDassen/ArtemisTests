@@ -11,7 +11,7 @@ import (
     "k8s.io/client-go/tools/clientcmd"
     "k8s.io/client-go/util/homedir"
     "k8s.io/client-go/kubernetes/scheme"
-    "k8s.io/client-go/util/remotecommand"
+    "k8s.io/client-go/util/exec"
     "k8s.io/api/core/v1"
 
     . "github.com/onsi/ginkgo/v2"
