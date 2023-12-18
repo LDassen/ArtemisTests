@@ -3,67 +3,48 @@ package MultiBrokerSetup_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
+	"os"
+	"os/exec"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Apply Kubernetes Configuration File and Get Error Logs", func() {
-	It("should apply a configuration file and retrieve error logs", func() {
-		namespace := "unexisting-namespace"
-		configFilePath := "./ex-aao.yaml" // Change this to the path of your single configuration file
+var _ = Describe("Deploying to Non-existing Namespace", func() {
+	var clientset *kubernetes.Clientset
 
-		// Load configuration from default location or provide your own kubeconfig
+	BeforeSuite(func() {
+		// Set up Kubernetes client using in-cluster configuration
 		config, err := rest.InClusterConfig()
-		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
+		Expect(err).NotTo(HaveOccurred())
 
-		// Create Kubernetes clientset
-		clientset, err := kubernetes.NewForConfig(config)
-		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
+		clientset, err = kubernetes.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred())
+	})
 
-		// Read the content of the configuration file
-		content, err := ioutil.ReadFile(configFilePath)
-		Expect(err).To(BeNil(), "Error reading configuration file: %v", err)
+	It("Should fail to deploy in a non-existing namespace", func() {
+		namespace := "nonexistent-namespace"
+		deploymentFile := "ex-aao.yaml"
 
-		// Apply the configuration file to the namespace
-		var applyErr error
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			_, err := clientset.CoreV1().RESTClient().
-				Post().
-				Resource("pods").
-				Namespace(namespace).
-				Body(content).
-				Do(context.TODO())
-			return err
-		})
-		Expect(err).ToNot(BeNil(), "Expected an error applying the configuration file")
+		// Apply the deployment file in the non-existing namespace
+		cmd := exec.Command("kubectl", "apply", "-f", deploymentFile, "--namespace="+namespace)
+		output, err := cmd.CombinedOutput()
 
-		// Retrieve and print error logs (if any)
-		errorLogs := getNamespaceEvents(clientset, namespace)
-		fmt.Printf("Error logs from namespace %s:\n%s\n", namespace, errorLogs)
+		// Verify that the error indicates a non-existing namespace
+		Expect(err).To(HaveOccurred())
+		Expect(output).To(ContainSubstring(fmt.Sprintf("namespace %s not found", namespace)))
+
+		// Alternatively, you can use the Kubernetes client to check if the namespace exists
+		_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
+		Expect(err).To(HaveOccurred())
+		Expect(kubernetes.IsNotFound(err)).To(BeTrue())
+	})
+
+	AfterSuite(func() {
+		// Clean up resources if needed
 	})
 })
-
-// getNamespaceEvents retrieves Kubernetes events for a namespace
-func getNamespaceEvents(clientset *kubernetes.Clientset, namespace string) string {
-	events, err := clientset.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return fmt.Sprintf("Error retrieving events for namespace %s: %v", namespace, err)
-	}
-
-	var eventsBuilder strings.Builder
-
-	for _, event := range events.Items {
-		eventsBuilder.WriteString(fmt.Sprintf("Event: %s, Reason: %s, Message: %s\n", event.ObjectMeta.Name, event.Reason, event.Message))
-	}
-
-	return eventsBuilder.String()
-}
