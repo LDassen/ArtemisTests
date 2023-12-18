@@ -11,13 +11,12 @@ import (
 )
 
 var _ = Describe("Deploying to Non-existing Namespace", func() {
-	var clientset *kubernetes.Clientset
-
 	BeforeSuite(func() {
 		// Set up Kubernetes client using in-cluster configuration
 		config, err := rest.InClusterConfig()
 		Expect(err).NotTo(HaveOccurred())
 
+		// You can use an underscore (_) to indicate that the variable is intentionally unused
 		_, err = kubernetes.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred())
 	})
