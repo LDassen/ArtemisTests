@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/apimachinery/pkg/api/errors" // Import the correct package
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,3 +46,4 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		// Clean up resources if needed
 	})
 })
+
