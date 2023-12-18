@@ -16,6 +16,11 @@ export default function () {
     }
   );
 
+  console.log('Request URL:', `${BASE_URL}/console/jolokia/exec/...`);
+  console.log('Request Headers:', { Authorization: `Basic ${ARTEMIS_CREDENTIALS}` });
+  console.log('Response status:', sendMessageResponse.status);
+  console.log('Response body:', sendMessageResponse.body);  
+
   // Check if the request was successful
   if (sendMessageResponse.status === 200) {
     console.log('Message sent successfully');
