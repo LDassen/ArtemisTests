@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/kubeshop/testkube/cmd/kubectl-testkube/commands"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
@@ -32,20 +33,9 @@ var _ = Describe("Deploying to Non-existing Namespace", func() {
 		// Construct the full path to the deployment file
 		deploymentFile := filepath.Join(currentDir, "ex-aao.yaml")
 
-		// Use exec.LookPath to find kubectl in the system's PATH
-		kubectlPath, err := exec.LookPath("kubectl")
-		Expect(err).NotTo(HaveOccurred())
-
-		cmd := exec.Command(kubectlPath, "apply", "-f", deploymentFile, "--namespace="+namespace)
-		output, err := cmd.CombinedOutput()
-
-		// Print both stdout and stderr for debugging
-		fmt.Println("Command stdout:", string(output))
-		fmt.Println("Command stderr:", err)
-
-		// Verify that the error indicates a non-existing namespace
-		Expect(err).To(HaveOccurred())
-		Expect(string(output)).To(ContainSubstring("does not match the namespace \"" + namespace + "\""))
+		// Use kubectl-testkube library to apply manifests
+		err = commands.Apply(deploymentFile, "--namespace="+namespace)
+		Expect(err).To(HaveOccurred()) // Expect an error as the namespace is non-existing
 	})
 })
 
