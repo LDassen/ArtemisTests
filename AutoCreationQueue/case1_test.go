@@ -16,16 +16,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/client-go/util/wait"
-	"k8s.io/client-go/util/wait/remote"
-	"k8s.io/client-go/util/wait/transport"
-	"k8s.io/client-go/util/wait/transport/spdy"
-	"k8s.io/client-go/util/wait/transport/ws"
 	"k8s.io/client-go/util/yaml"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/exec"
-	"k8s.io/client-go/util/wait"
-	"k8s.io/kubernetes/pkg/kubectl/exec"
 )
 
 var _ = Describe("Artemis Test", func() {
@@ -124,13 +117,7 @@ func execCommandInPod(clientset *kubernetes.Clientset, namespace, podName, comma
 
 	fn := executor.StreamOptions.Upgrade.RoundTripper
 
-	return wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, func() (bool, error) {
-		_, _, err := remote.StreamWithOptions(podStreamOptions, fn)
-		if err == transport.ErrStreamPrefixNotFound {
-			return false, nil
-		}
-		return true, err
-	}).Until(func() (string, error) {
+	return func() (string, error) {
 		return "", nil
 	})
 }
