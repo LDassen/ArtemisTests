@@ -7,13 +7,12 @@ import (
 	"os/exec"
 	"testing"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	v1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Artemis Broker", func() {
@@ -26,9 +25,9 @@ var _ = Describe("Artemis Broker", func() {
 		// Replace this command with the actual command you want to run inside the broker
 		commandToRun := "./amq-broker/bin/artemis producer --user cgi --password cgi --url tcp://10.204.0.39:61616 --message-count 100"
 
-		// Get the pod's name and namespace
-		podName, namespace, err := getPodInfo()
-		Expect(err).NotTo(HaveOccurred())
+		// Set the namespace and pod name directly
+		namespace := "activemq-artemis-brokers"
+		podName := "ex-aao-ss-0"
 
 		// Run the command inside the specific Artemis broker pod
 		output, err := runCommandInsideKubernetesPod(clientset, podName, namespace, commandToRun)
@@ -54,32 +53,18 @@ func createKubernetesClient() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-// Helper function to get pod information (name and namespace)
-func getPodInfo() (string, string, error) {
-	podName := os.Getenv("POD_NAME")
-	if podName == "" {
-		return "", "", fmt.Errorf("POD_NAME environment variable not set")
-	}
-
-	namespace := os.Getenv("POD_NAMESPACE")
-	if namespace == "" {
-		return "", "", fmt.Errorf("POD_NAMESPACE environment variable not set")
-	}
-
-	return podName, namespace, nil
-}
-
 // Helper function to run a command inside a Kubernetes pod using exec
 func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, namespace, command string) (string, error) {
-	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, v1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
 
-	containerName := pod.Spec.Containers[0].Name
-
 	// Create an exec command
-	execCommand := exec.Command("kubectl", "exec", "-it", podName, "-n", namespace, "--", "/bin/bash", "-c", command)
+	execCommand := exec.Command("/bin/bash", "-c", command)
+
+	// Set the correct working directory
+	execCommand.Dir = "/home/jboss"
 
 	// Capture the command output
 	var stdout, stderr bytes.Buffer
