@@ -3,13 +3,12 @@ package AutoCreationQueue_test
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"os/exec"
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -55,7 +54,7 @@ func createKubernetesClient() (*kubernetes.Clientset, error) {
 
 // Helper function to run a command inside a Kubernetes pod using exec
 func runCommandInsideKubernetesPod(clientset *kubernetes.Clientset, podName, namespace, command string) (string, error) {
-	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, v1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
