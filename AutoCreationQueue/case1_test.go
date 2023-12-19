@@ -26,7 +26,7 @@ var _ = Describe("Broker Label Test", func() {
         Expect(err).NotTo(HaveOccurred())
 
         // Connect to Artemis using AMQP
-        conn, err := amqp.Dial("amqp://cgi:cgi@ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:5672")
+        conn, err := amqp.Dial("amqp://cgi:cgi@ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619")
         Expect(err).NotTo(HaveOccurred())
         defer conn.Close()
 
