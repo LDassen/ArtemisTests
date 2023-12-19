@@ -1,4 +1,4 @@
-package brokers_test
+package AutoCreationQueue_test
 
 import (
     . "github.com/onsi/ginkgo/v2"
