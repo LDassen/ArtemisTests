@@ -1,105 +1,70 @@
-package AutoCreationQueue_test
+package main
 
 import (
     "context"
-    "github.com/streadway/amqp"
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
-    "bytes"
-
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/client-go/kubernetes"
-    "k8s.io/client-go/rest"
-    v1 "k8s.io/api/core/v1"
-    "k8s.io/client-go/kubernetes/scheme"
-    "k8s.io/client-go/tools/remotecommand"
+    "time"
+    "github.com/onsi/ginkgo/v2"
+    "github.com/onsi/gomega"
+    "pack.ag/amqp" // AMQP library for Go
 )
 
-var _ = Describe("Artemis Test", func() {
-    var (
-        clientset *kubernetes.Clientset
-        namespace string = "activemq-artemis-brokers"
-    )
+var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
+    var client *amqp.Client
+    var session *amqp.Session
+    var sender *amqp.Sender
+    var receiver *amqp.Receiver
+    var ctx context.Context
+    var err error
 
-    BeforeEach(func() {
-        // Set up the client
-        config, err := rest.InClusterConfig()
-        Expect(err).NotTo(HaveOccurred())
-        clientset, err = kubernetes.NewForConfig(config)
-        Expect(err).NotTo(HaveOccurred())
-
-        // Connect to Artemis using AMQP
-        conn, err := amqp.Dial("amqp://cgi:cgi@ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619")
-        Expect(err).NotTo(HaveOccurred())
-        defer conn.Close()
-
-        ch, err := conn.Channel()
-        Expect(err).NotTo(HaveOccurred())
-        defer ch.Close()
-
-        body := "Hi, this is a test!"
-        err = ch.Publish(
-            "",         // exchange
-            "TESTKUBE", // routing key (queue name)
-            false,      // mandatory
-            false,      // immediate
-            amqp.Publishing{
-                ContentType: "text/plain",
-                Body:        []byte(body),
-            })
-        Expect(err).NotTo(HaveOccurred())
+    ginkgo.BeforeEach(func() {
+        ctx = context.Background()
+        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("cgi", "cgi")) // Replace with actual credentials and Artemis server address
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+        session, err = client.NewSession()
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
     })
 
-    It("should execute a command in one of the pods", func() {
-        pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-            LabelSelector: "application=ex-aao-app",
-        })
-        Expect(err).NotTo(HaveOccurred())
+    ginkgo.It("should send and receive a message in a queue", func() {
+        queueName := "TESTKUBE"
+        messageText := "Hello, Artemis!"
 
-        // Assuming you pick the first pod for simplicity
-        podName := pods.Items[0].Name
-        cmd := []string{"/bin/sh", "-c", "./amq-broker/bin/artemis queue stat --url tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616 --user cgi --password cgi --maxRows 200"}
+        // Create a sender
+        sender, err = session.NewSender(
+            amqp.LinkTargetAddress(queueName),
+        )
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-        stdout, stderr, err := ExecuteRemoteCommand(podName, namespace, cmd, clientset.RESTConfig())
-        Expect(err).NotTo(HaveOccurred())
+        // Send a message
+        err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-        // Add your logic here to check for the specific number in the output line with 'TEST'
-        // e.g., parse stdout and look for the desired pattern
+        // Create a receiver
+        receiver, err = session.NewReceiver(
+            amqp.LinkSourceAddress(queueName),
+        )
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+        // Receive a message
+        msg, err := receiver.Receive(ctx)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+        gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+
+        // Accept message
+        msg.Accept()
+    })
+
+    ginkgo.AfterEach(func() {
+        if sender != nil {
+            sender.Close(ctx)
+        }
+        if receiver != nil {
+            receiver.Close(ctx)
+        }
+        if session != nil {
+            session.Close(ctx)
+        }
+        if client != nil {
+            client.Close()
+        }
     })
 })
-
-func ExecuteRemoteCommand(podName string, namespace string, command []string, restCfg *rest.Config) (string, string, error) {
-    coreClient, err := kubernetes.NewForConfig(restCfg)
-    if err != nil {
-        return "", "", err
-    }
-
-    buf := &bytes.Buffer{}
-    errBuf := &bytes.Buffer{}
-    request := coreClient.CoreV1().RESTClient().
-        Post().
-        Namespace(namespace).
-        Resource("pods").
-        Name(podName).
-        SubResource("exec").
-        VersionedParams(&v1.PodExecOptions{
-            Command: command,
-            Stdout:  true,
-            Stderr:  true,
-        }, scheme.ParameterCodec)
-
-    exec, err := remotecommand.NewSPDYExecutor(restCfg, "POST", request.URL())
-    if err != nil {
-        return "", "", err
-    }
-
-    err = exec.Stream(remotecommand.StreamOptions{
-        Stdout: buf,
-        Stderr: errBuf,
-    })
-    if err != nil {
-        return "", "", err
-    }
-
-    return buf.String(), errBuf.String(), nil
-}
