@@ -5,14 +5,17 @@ import (
     "github.com/streadway/amqp"
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
+    "bytes"
 
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
     v1 "k8s.io/api/core/v1"
+    "k8s.io/client-go/kubernetes/scheme"
+    "k8s.io/client-go/tools/remotecommand"
 )
 
-var _ = Describe("Broker Label Test", func() {
+var _ = Describe("Artemis Test", func() {
     var (
         clientset *kubernetes.Clientset
         namespace string = "activemq-artemis-brokers"
@@ -55,19 +58,48 @@ var _ = Describe("Broker Label Test", func() {
 
         // Assuming you pick the first pod for simplicity
         podName := pods.Items[0].Name
-        cmd := []string{"bin/bash", "-c", "./amq-broker/bin/artemis queue stat --url tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616 --user cgi --password cgi --maxRows 200"}
+        cmd := []string{"/bin/sh", "-c", "./amq-broker/bin/artemis queue stat --url tcp://ex-aao-hdls-svc.activemq-artemis-brokers:61616 --user cgi --password cgi --maxRows 200"}
 
-        req := clientset.CoreV1().Pods(namespace).Exec(podName, &v1.PodExecOptions{
-            Command: cmd,
-            Stdout:  true,
-            Stderr:  true,
-        })
-
-        // Execute the command
-        // Note: You might need to handle the stream (stdout, stderr) to capture the command output
-        _, err = Execute(req, config)
+        stdout, stderr, err := ExecuteRemoteCommand(podName, namespace, cmd, clientset.RESTConfig())
         Expect(err).NotTo(HaveOccurred())
 
         // Add your logic here to check for the specific number in the output line with 'TEST'
+        // e.g., parse stdout and look for the desired pattern
     })
 })
+
+func ExecuteRemoteCommand(podName string, namespace string, command []string, restCfg *rest.Config) (string, string, error) {
+    coreClient, err := kubernetes.NewForConfig(restCfg)
+    if err != nil {
+        return "", "", err
+    }
+
+    buf := &bytes.Buffer{}
+    errBuf := &bytes.Buffer{}
+    request := coreClient.CoreV1().RESTClient().
+        Post().
+        Namespace(namespace).
+        Resource("pods").
+        Name(podName).
+        SubResource("exec").
+        VersionedParams(&v1.PodExecOptions{
+            Command: command,
+            Stdout:  true,
+            Stderr:  true,
+        }, scheme.ParameterCodec)
+
+    exec, err := remotecommand.NewSPDYExecutor(restCfg, "POST", request.URL())
+    if err != nil {
+        return "", "", err
+    }
+
+    err = exec.Stream(remotecommand.StreamOptions{
+        Stdout: buf,
+        Stderr: errBuf,
+    })
+    if err != nil {
+        return "", "", err
+    }
+
+    return buf.String(), errBuf.String(), nil
+}
