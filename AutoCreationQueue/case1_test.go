@@ -1,6 +1,7 @@
 package AutoCreationQueue_test
 
 import (
+    "context"
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
 
@@ -24,7 +25,7 @@ var _ = Describe("Broker Label Test", func() {
     })
 
     It("should check for exactly three brokers with the correct labels", func() {
-        pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
+        pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
             LabelSelector: "application=ex-aao-app",
         })
         Expect(err).NotTo(HaveOccurred())
