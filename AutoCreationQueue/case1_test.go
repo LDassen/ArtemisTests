@@ -18,7 +18,7 @@ func checkQueueExists(queueName string) bool {
     if err != nil {
         return false
     }
-    req.Header.Set("Origin", "http://localhost")
+    req.Header.Set("Origin", url)
     req.SetBasicAuth("cgi", "cgi") // Replace with actual credentials
 
     client := &http.Client{}
