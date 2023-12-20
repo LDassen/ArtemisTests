@@ -35,11 +35,11 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         )
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     
-        // Send the first message
+        // Send the first message (case 1)
         err = sender.Send(ctx, amqp.NewMessage([]byte(firstMessageText)))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     
-        // Wait for 10 minutes after sending the first message
+        // Wait for 10 minutes after sending the first message (case 2)
         time.Sleep(1 * time.Minute)
 
         // Create a receiver for the first message
@@ -59,7 +59,7 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         // Close the first receiver to clean up before receiving the second message
         receiver.Close(ctx)
     
-        // Send the second message
+        // Send the second message (case 3)
         err = sender.Send(ctx, amqp.NewMessage([]byte(secondMessageText)))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     
