@@ -27,7 +27,7 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
-	ginkgo.It("should fail to apply a deployment file for Artemis to a non-existing namespace", func() {
+	ginkgo.It("Should fail to apply a deployment file for Artemis to a non-existing namespace", func() {
 		fileName := "ex-aao.yaml"
 		namespace := "non-existing"
 
