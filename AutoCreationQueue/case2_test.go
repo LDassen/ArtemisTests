@@ -38,7 +38,7 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Wait for 10 minutes
-		time.Sleep(10 * time.Minute)
+		time.Sleep(1 * time.Minute)
 
         // Create a receiver
         receiver, err = session.NewReceiver(
