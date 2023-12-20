@@ -5,10 +5,6 @@ import (
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
     "pack.ag/amqp"
-    "net/http"
-    "io/ioutil"
-    "encoding/json"
-    "strings"
 )
 
 // Function to check if a queue exists
