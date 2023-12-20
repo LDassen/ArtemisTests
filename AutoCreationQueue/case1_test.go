@@ -17,7 +17,7 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
 
     ginkgo.BeforeEach(func() {
         ctx = context.Background()
-        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61618", amqp.ConnSASLPlain("cgi", "cgi")) // Replace with actual credentials and Artemis server address
+        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("cgi", "cgi")) // Replace with actual credentials and Artemis server address
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
         session, err = client.NewSession()
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
