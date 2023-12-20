@@ -25,8 +25,8 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
     })
 
 	ginkgo.It("should apply a deployment file for Artemis", func() {
-		fileName := "artemis_deployment.yaml"
-		namespace := "your_namespace"
+		fileName := "ex_aao.yaml"
+		namespace := "non-existing"
 	
 		// Read the file
 		filePath, err := filepath.Abs(fileName)
