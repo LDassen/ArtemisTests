@@ -4,17 +4,8 @@ import (
     "context"
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
-    "pack.ag/amqp"
-    "net/http"
-    "io/ioutil"
-    "encoding/json"
-    "strings"
+    "pack.ag/amqp" // AMQP library for Go
 )
-
-// Function to check if a queue exists
-func checkQueueExists(queueName string) bool {
-    // ... existing code for checkQueueExists ...
-}
 
 var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
     var client *amqp.Client
@@ -32,19 +23,33 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     })
 
-    ginkgo.It("should send a message and then check if the queue exists", func() {
+    ginkgo.It("should send and receive a message in a queue", func() {
         queueName := "TESTKUBE"
         messageText := "Hello, Artemis!"
 
-        // Create a sender and send a message
-        sender, err = session.NewSender(amqp.LinkTargetAddress(queueName))
+        // Create a sender
+        sender, err = session.NewSender(
+            amqp.LinkTargetAddress(queueName),
+        )
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+        // Send a message
         err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-        // Check if the queue exists after sending the message
-        exists := checkQueueExists(queueName)
-        gomega.Expect(exists).To(gomega.BeTrue(), "Queue TESTKUBE should be created after message is sent")
+        // Create a receiver
+        receiver, err = session.NewReceiver(
+            amqp.LinkSourceAddress(queueName),
+        )
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+        // Receive a message
+        msg, err := receiver.Receive(ctx)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+        gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+
+        // Accept message
+        msg.Accept()
     })
 
     ginkgo.AfterEach(func() {
