@@ -5,7 +5,6 @@ import (
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
     "pack.ag/amqp" // AMQP library for Go
-	"time"
 )
 
 var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {

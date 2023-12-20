@@ -5,7 +5,6 @@ import (
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
     "pack.ag/amqp" // AMQP library for Go
-	"time"
 )
 
 var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
@@ -37,6 +36,9 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         // Send a message
         err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Wait for 10 minutes
+		time.Sleep(10 * time.Minute)
 
         // Create a receiver
         receiver, err = session.NewReceiver(
