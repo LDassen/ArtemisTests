@@ -5,11 +5,46 @@ import (
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
     "pack.ag/amqp"
+    "net/http"
+    "io/ioutil"
+    "encoding/json"
+    "strings"
 )
 
 // Function to check if a queue exists
 func checkQueueExists(queueName string) bool {
-    // ... existing code for checkQueueExists ...
+    url := "http://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:8161/console/jolokia/exec/org.apache.activemq.artemis:broker=\"0.0.0.0\"/listQueues/{\"field\":\"name\",\"operation\":\"CONTAINS\",\"value\":\"" + queueName + "\"}/1/100"
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return false
+    }
+    req.Header.Set("Origin", "http://localhost")
+    req.SetBasicAuth("cgi", "cgi") // Replace with actual credentials
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return false
+    }
+    defer resp.Body.Close()
+
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return false
+    }
+
+    var queues []map[string]interface{}
+    if err := json.Unmarshal(body, &queues); err != nil {
+        return false
+    }
+
+    for _, queue := range queues {
+        if name, ok := queue["name"].(string); ok && strings.Contains(name, queueName) {
+            return true
+        }
+    }
+
+    return false
 }
 
 var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
