@@ -49,12 +49,12 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     
         // Receive the first message
-        msg, err := receiver.Receive(ctx)
+        msg1, err := receiver.Receive(ctx)
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
-        gomega.Expect(string(msg.GetData())).To(gomega.Equal(firstMessageText))
+        gomega.Expect(string(msg1.GetData())).To(gomega.Equal(firstMessageText))
     
         // Accept the first message
-        msg.Accept()
+        msg1.Accept()
     
         // Close the first receiver to clean up before receiving the second message
         receiver.Close(ctx)
@@ -70,12 +70,12 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     
         // Receive the second message
-        msg, err = receiver.Receive(ctx)
+        msg2, err = receiver.Receive(ctx)
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
-        gomega.Expect(string(msg.GetData())).To(gomega.Equal(secondMessageText))
+        gomega.Expect(string(msg2.GetData())).To(gomega.Equal(secondMessageText))
     
         // Accept the second message
-        msg.Accept()
+        msg2.Accept()
     })
 
     ginkgo.AfterEach(func() {
