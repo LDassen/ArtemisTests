@@ -25,7 +25,7 @@ var _ = ginkgo.Describe("Artemis Queue Test with AMQP", func() {
 
     ginkgo.It("should send and receive a message in a queue", func() {
         queueName := "TESTKUBE"
-        messageText := "Hello, Artemis2!"
+        messageText := "Hello, Artemis!"
 
         // Create a sender
         sender, err = session.NewSender(
