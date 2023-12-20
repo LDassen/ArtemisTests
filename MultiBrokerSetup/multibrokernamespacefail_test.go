@@ -1,54 +1,55 @@
 package MultiBrokerSetup_test
 
 import (
-    "io/ioutil"
-    "path/filepath"
 	"bytes"
-	"context" // Import the context package
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1" // Ensure this import is correct
-    "github.com/onsi/ginkgo/v2"
-    "github.com/onsi/gomega"
-    appsv1 "k8s.io/api/apps/v1"
-    "k8s.io/apimachinery/pkg/util/yaml"
-    "k8s.io/client-go/kubernetes"
-    "k8s.io/client-go/rest"
+	"context"
+	"io/ioutil"
+	"path/filepath"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
-    var clientset *kubernetes.Clientset
+	var clientset *kubernetes.Clientset
 
-    ginkgo.BeforeEach(func() {
-        // Set up the Kubernetes client
-        config, err := rest.InClusterConfig()
-        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	ginkgo.BeforeEach(func() {
+		// Set up the Kubernetes client
+		config, err := rest.InClusterConfig()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-        clientset, err = kubernetes.NewForConfig(config)
-        gomega.Expect(err).NotTo(gomega.HaveOccurred())
-    })
+		clientset, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	})
 
-	ginkgo.It("should apply a deployment file for Artemis", func() {
+	ginkgo.It("should fail to apply a deployment file for Artemis to a non-existing namespace", func() {
 		fileName := "ex-aao.yaml"
 		namespace := "non-existing"
-	
+
 		// Read the file
 		filePath, err := filepath.Abs(fileName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
+
 		fileBytes, err := ioutil.ReadFile(filePath)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
+
 		// Decode the YAML manifest
 		decode := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(fileBytes), 1024)
 		var deployment appsv1.Deployment
 		err = decode.Decode(&deployment)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-		// Apply the deployment
+
+		// Try to apply the deployment to the non-existing namespace
 		_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), &deployment, metav1.CreateOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		gomega.Expect(err).To(gomega.MatchError(".*namespace not found.*"))
 	})
 
-    ginkgo.AfterEach(func() {
-        // Cleanup logic if needed
-    })
+	ginkgo.AfterEach(func() {
+		// Cleanup logic if needed
+	})
 })
