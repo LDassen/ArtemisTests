@@ -2,7 +2,7 @@ apiVersion: broker.amq.io/v1beta1
 kind: ActiveMQArtemis
 metadata:
   name: ex-aao
-  namespace: activemq-artemis-brokers
+  namespace: non-existing
   labels:
     app: broker
 spec:

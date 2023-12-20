@@ -1,64 +1,54 @@
-package MultiBrokerSetup
+package MultiBrokerSetup_test
 
 import (
-	"context"
-	"strings"
-	"testing"
+    "io/ioutil"
+    "path/filepath"
 
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
+    "github.com/onsi/ginkgo/v2"
+    "github.com/onsi/gomega"
+
+    appsv1 "k8s.io/api/apps/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/util/yaml"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/rest"
 )
 
-var _ = ginkgo.Describe("Artemis Broker Deployment", func() {
-	var kubeClient *kubernetes.Clientset
+var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
+    var clientset *kubernetes.Clientset
 
-	ginkgo.BeforeEach(func() {
-		// Load the in-cluster or local Kubernetes config
-		config, err := rest.InClusterConfig()
-		if err != nil {
-			// If running outside the cluster, use kubeconfig file
-			home := homedir.HomeDir()
-			kubeconfig := filepath.Join(home, ".kube", "config")
-			config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		}
+    ginkgo.BeforeEach(func() {
+        // Set up the Kubernetes client
+        config, err := rest.InClusterConfig()
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Create a Kubernetes client
-		kubeClient, err = kubernetes.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	})
+        clientset, err = kubernetes.NewForConfig(config)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+    })
 
-	ginkgo.It("should apply Artemis broker deployment to a non-existing namespace", func() {
-		// Set the non-existing namespace
-		nonExistingNamespace := "non-existing-namespace"
+    ginkgo.It("should apply a deployment file for Artemis", func() {
+        fileName := "ex-aao.yaml"
+        namespace := "non-existing"
 
-		// Create a Deployment object
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "artemis-broker",
-				Namespace: nonExistingNamespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				// Add your deployment spec here
-				// ...
-			},
-		}
+        // Read the file
+        filePath, err := filepath.Abs(fileName)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Apply the Deployment
-		_, err := kubeClient.AppsV1().Deployments(nonExistingNamespace).Create(context.Background(), deployment, metav1.CreateOptions{})
-		gomega.Expect(err).To(gomega.HaveOccurred())
-	})
+        fileBytes, err := ioutil.ReadFile(filePath)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	ginkgo.AfterEach(func() {
-		// Cleanup if necessary
-	})
+        // Decode the YAML manifest
+        decode := yaml.NewYAMLOrJSONDecoder(fileBytes, 1024)
+        var deployment appsv1.Deployment
+        err = decode.Decode(&deployment)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
+        // Apply the deployment
+        _, err = clientset.AppsV1().Deployments(namespace).Create(&deployment)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+    })
+
+    ginkgo.AfterEach(func() {
+        // Cleanup logic if needed
+    })
 })
-
-func TestArtemisBrokerDeployment(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Artemis Broker Deployment Suite")
-}
