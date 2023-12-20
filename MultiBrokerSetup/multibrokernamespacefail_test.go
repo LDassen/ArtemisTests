@@ -2,23 +2,27 @@ package MultiBrokerSetup
 
 import (
 	"context"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var _ = ginkgo.Describe("Artemis Broker Deployment", func() {
-	var kubeConfigPath string
+	var kubeClient *kubernetes.Clientset
 
 	ginkgo.BeforeEach(func() {
-		// Find kubeconfig file path
-		kubeConfigPath = findKubeConfig()
-		gomega.Expect(kubeConfigPath).NotTo(gomega.BeEmpty())
+		// Load the in-cluster Kubernetes config
+		config, err := rest.InClusterConfig()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Create a Kubernetes client
+		kubeClient, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
 	ginkgo.It("should apply Artemis broker deployment file to a non-existing namespace", func() {
@@ -45,21 +49,6 @@ var _ = ginkgo.Describe("Artemis Broker Deployment", func() {
 	})
 
 })
-
-func findKubeConfig() string {
-	// Check KUBECONFIG environment variable first
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig != "" {
-		return kubeconfig
-	}
-
-	// If KUBECONFIG is not set, use the default kubeconfig file location
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Join(home, ".kube", "config")
-}
 
 func TestArtemisBrokerDeployment(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
