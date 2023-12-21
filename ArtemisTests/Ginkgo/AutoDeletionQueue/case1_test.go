@@ -1,4 +1,4 @@
-package AutoCreationQueue_test
+package AutoDeletionQueue_test
 
 import (
     "context"
