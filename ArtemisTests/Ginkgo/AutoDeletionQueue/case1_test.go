@@ -52,8 +52,8 @@ var _ = ginkgo.Describe("Artemis Queue Deletion Test with AMQP", func() {
         msg.Accept()
         receiver.Close(ctx)
 
-        // Wait for 3 minute
-        time.Sleep(3 * time.Minute)
+        // Wait for 2 minute
+        time.Sleep(2 * time.Minute)
 
         // Check if the queue is deleted
         _, err = session.NewReceiver(
