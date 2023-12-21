@@ -59,7 +59,7 @@ var _ = ginkgo.Describe("Artemis Queue Deletion Test with AMQP", func() {
         _, err = session.NewReceiver(
             amqp.LinkSourceAddress(queueName),
         )
-        gomega.Expect(err).To(gomega.BeNil()) // Expect an error if the queue is deleted
+        gomega.Expect(err).To(gomega.BeNil()) // Expect a nil if the queue is deleted
     })
 
     ginkgo.AfterEach(func() {
