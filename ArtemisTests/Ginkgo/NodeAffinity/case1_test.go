@@ -1,4 +1,4 @@
-package <folder_name>_test
+package NodeAffinity_test
 
 import (
 	"context"
