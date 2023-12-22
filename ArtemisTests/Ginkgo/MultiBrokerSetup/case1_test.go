@@ -34,7 +34,7 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 	ginkgo.It("should apply a deployment file for Artemis to a namespace", func() {
 		fileName := "case_1-ex-aao.yaml"
 		namespace := "activemq-artemis-brokers" // Replace with your existing namespace or a new one
-	
+
 		// Check if the namespace already exists
 		_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
