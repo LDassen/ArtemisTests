@@ -4,6 +4,7 @@ import (
     "context"
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
+    "fmt"
     "pack.ag/amqp" // AMQP library for Go
 )
 
@@ -51,7 +52,6 @@ var _ = ginkgo.Describe("Login Credentials Validation Test with AMQP", func() {
         gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
         msg.Accept()
         receiver.Close(ctx)
-        
         // Print success message
         fmt.Println("Login is successful")
     })
