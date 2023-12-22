@@ -1,7 +1,6 @@
 package MultiBrokerSetup_test
 
 import (
-    "bytes"
     "context"
     "fmt"
     "io/ioutil"
@@ -16,7 +15,6 @@ import (
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
     "k8s.io/apimachinery/pkg/util/wait"
-    "k8s.io/apimachinery/pkg/labels"
 
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
