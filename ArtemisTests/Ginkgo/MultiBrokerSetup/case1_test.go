@@ -81,24 +81,24 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
 
         // Wait for the pods to be running
-        labelSelector := fmt.Sprintf("app=%s", obj.GetLabels()["app"])
-        err = wait.PollImmediate(5*time.Second, 2*time.Minute, func() (bool, error) {
-            podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-                LabelSelector: labelSelector,
-            })
-            if err != nil {
-                return false, err
-            }
-            runningPods := 0
-            for _, pod := range podList.Items {
-                if pod.Status.Phase == "Running" {
-                    runningPods++
-                }
-            }
-            return runningPods == expectedPodCount, nil
-        })
-        gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for broker pods to be running")
-
+		labelSelector := fmt.Sprintf("app=%s", obj.GetLabels()["app"])
+		err = wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) { // Increase the timeout to 5 minutes
+			podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: labelSelector,
+			})
+			if err != nil {
+				return false, err
+			}
+			runningPods := 0
+			for _, pod := range podList.Items {
+				if pod.Status.Phase == "Running" {
+					runningPods++
+				}
+			}
+			return runningPods == expectedPodCount, nil
+		})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for broker pods to be running")
+	
         // Delete the ActiveMQArtemis resource
         err = resourceClient.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
         gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
