@@ -5,7 +5,7 @@ import (
 	"context"
 	"io/ioutil"
 	"path/filepath"
-
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -29,7 +29,7 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 
 	ginkgo.It("should apply a deployment file for Artemis to a namespace", func() {
 		fileName := "case_1-ex-aao.yaml"
-		namespace := "activemq-artemis-brokers" // Replace with your existing namespace or a new one
+		namespace := "activemq-artemis-brokers" 
 
 		// Read the file
 		filePath, err := filepath.Abs(fileName)
