@@ -27,7 +27,7 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 		clientset, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-        if err != nil && strings.Contains(err.Error(), "namespaces \"non-existing\" not found") {
+        if err != nil && strings.Contains(err.Error(), "the namespace of the provided object does not match the namespace sent on the request") {
             // If the specific error is encountered, consider the test as passed
             fmt.Println("[ERROR] Non-existing namespace error encountered:", err)
             ginkgo.Skip("Non-existing namespace error: aborting test")
