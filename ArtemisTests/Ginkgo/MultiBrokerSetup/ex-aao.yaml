@@ -96,7 +96,6 @@ spec:
   console:
     expose: true
   deploymentPlan:
-    statefulset: true
     enableMetricsPlugin: true
     extraMounts:
       configMaps:

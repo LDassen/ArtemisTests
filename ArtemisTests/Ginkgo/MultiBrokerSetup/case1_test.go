@@ -33,23 +33,8 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 	})
 
 	ginkgo.It("should apply a deployment file for Artemis to a namespace", func() {
-		fileName := "ex-aao.yaml" //"case_1-ex-aao.yaml"
-		namespace := "activemq-artemis-brokers" // Replace with your existing namespace or a new one
-
-		// Check if the namespace already exists
-		_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
-		if err != nil && errors.IsNotFound(err) {
-			// The namespace does not exist, so create it
-			_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: namespace,
-				},
-			}, metav1.CreateOptions{})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		} else if err != nil {
-			// Handle other errors, if any
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		}
+		fileName := "ex-aao.yaml"
+		namespace := "activemq-artemis-brokers"
 
 		// Read the file
 		filePath, err := filepath.Abs(fileName)
