@@ -1,38 +1,49 @@
-package NodeAffinity_test
+package MultiBrokerSetup_test
 
 import (
 	"context"
 	"fmt"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
 )
 
-var _ = Describe("Artemis Broker Pods", func() {
-	It("should have the correct number of 'broker' pods running", func() {
+var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
+	var kubeClient *kubernetes.Clientset
+	var namespace string
+
+	ginkgo.BeforeEach(func() {
+		var err error
 		config, err := rest.InClusterConfig()
-		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		clientset, err := kubernetes.NewForConfig(config)
-		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
+		kubeClient, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		namespace := "activemq-artemis-operator"
-		expectedPodCount := 1 // Set your expected number of 'broker' pods
+		namespace = "activemq-artemis-brokers"
+	})
 
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "control-plane=controller-manager"})
-		Expect(err).To(BeNil(), "Error getting pods: %v", err)
+	ginkgo.It("Should have ActiveMQArtemis pods on different nodes", func() {
+		// Get the list of pods in the namespace
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: "ex-aao-app", // Update with the actual label selector
+		})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting pod list")
 
-		// Debugging statements
-		fmt.Printf("Retrieved %d pods in namespace %s\n", len(pods.Items), namespace)
+		// Check if pods are on different nodes
+		nodes := make(map[string]struct{})
 		for _, pod := range pods.Items {
-			fmt.Printf("Pod Name: %s\n", pod.Name)
-			// Add more details as needed
+			nodeName := pod.Spec.NodeName
+			_, exists := nodes[nodeName]
+			gomega.Expect(exists).To(gomega.BeFalse(), fmt.Sprintf("Pod %s is on the same node as another pod", pod.Name))
+			nodes[nodeName] = struct{}{}
 		}
 
-		actualPodCount := len(pods.Items)
-
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
+		// Confirm that pods are on different nodes
+		fmt.Println("All ActiveMQArtemis pods are on different nodes.")
 	})
 })
