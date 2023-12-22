@@ -3,10 +3,11 @@ package MultiBrokerSetup_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"time"
-	
+
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,6 +56,33 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 		ginkgo.By("Waiting for the deployment to be available")
 		err = waitForDeployment(clientset, namespace, deployment.Name, 3, 5*time.Minute) // Adjust timeout as needed
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	})
+
+	ginkgo.It("should have the correct number of 'broker' pods running", func() {
+		config, err := rest.InClusterConfig()
+		gomega.Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
+
+		clientset, err := kubernetes.NewForConfig(config)
+		gomega.Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
+
+		namespace := "activemq-artemis-brokers"
+		expectedPodCount := 3 // Set your expected number of 'broker' pods
+
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: "app=broker",
+		})
+		gomega.Expect(err).To(BeNil(), "Error getting pods: %v", err)
+
+		// Debugging statements
+		fmt.Printf("Retrieved %d pods in namespace %s\n", len(pods.Items), namespace)
+		for _, pod := range pods.Items {
+			fmt.Printf("Pod Name: %s\n", pod.Name)
+			// Add more details as needed
+		}
+
+		actualPodCount := len(pods.Items)
+
+		gomega.Expect(actualPodCount).To(gomega.Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
 	})
 
 	ginkgo.AfterEach(func() {
