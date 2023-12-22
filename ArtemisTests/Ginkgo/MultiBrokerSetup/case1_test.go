@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -17,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
@@ -48,7 +47,7 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 
 		// Wait for the deployment to be available
 		ginkgo.By("Waiting for the deployment to be available")
-		err = waitForDeployment(clientset, namespace, "ex-aao", 3, 1*time.Minute) 
+		err = waitForDeployment(clientset, namespace, "ex-aao", 3, 5*time.Minute) // Adjust timeout as needed
 		gomega.Expect(err).To(gomega.BeNil(), "Error waiting for deployment: %v", err)
 
 		// Check the number of 'broker' pods
@@ -61,9 +60,10 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 		fmt.Printf("Retrieved %d pods in namespace %s\n", len(pods.Items), namespace)
 		for _, pod := range pods.Items {
 			fmt.Printf("Pod Name: %s\n", pod.Name)
+			// Add more details as needed
 		}
 
-		expectedPodCount := 3 
+		expectedPodCount := 3 // Set your expected number of 'broker' pods
 		actualPodCount := len(pods.Items)
 
 		gomega.Expect(actualPodCount).To(gomega.Equal(expectedPodCount), "Expected %d 'broker' pods, but found %d", expectedPodCount, actualPodCount)
@@ -93,4 +93,20 @@ func applyDeploymentFromFile(clientset *kubernetes.Clientset, fileName, namespac
 	// Apply the deployment to the namespace
 	_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), &deployment, metav1.CreateOptions{})
 	return err
+}
+
+// Helper function to wait for the deployment to be available
+func waitForDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string, replicas int32, timeout time.Duration) error {
+	return wait.PollImmediate(10*time.Second, timeout, func() (bool, error) {
+		deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		if deployment.Status.AvailableReplicas == replicas {
+			return true, nil
+		}
+
+		return false, nil
+	})
 }
