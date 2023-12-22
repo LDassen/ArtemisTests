@@ -22,17 +22,18 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 	ginkgo.BeforeEach(func() {
 		// Set up the Kubernetes client
 		config, err := rest.InClusterConfig()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		if err != nil {
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		}
 
 		clientset, err = kubernetes.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-        if err != nil && strings.Contains(err.Error(), "the namespace of the provided object does not match the namespace sent on the request") {
-            // If the specific error is encountered, consider the test as passed
-            fmt.Println("[ERROR] Non-existing namespace error encountered:", err)
-            ginkgo.Skip("Non-existing namespace error: aborting test")
-        }
-		
+		if err != nil {
+			if strings.Contains(err.Error(), "the namespace of the provided object does not match the namespace sent on the request") {
+				fmt.Println("[ERROR] Non-existing namespace error encountered:", err)
+				ginkgo.Skip("Non-existing namespace error: aborting test")
+			}
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		}
 	})
 
 	ginkgo.It("Should fail to apply a deployment file for Artemis to a non-existing namespace", func() {
