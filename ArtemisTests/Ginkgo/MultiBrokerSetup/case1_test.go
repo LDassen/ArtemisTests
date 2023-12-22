@@ -1,105 +1,98 @@
 package MultiBrokerSetup_test
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"path/filepath"
+    "bytes"
+    "context"
+    "fmt"
+    "io/ioutil"
+    "path/filepath"
+    "time"
 
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+    "k8s.io/apimachinery/pkg/runtime/schema"
+    "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+    "k8s.io/client-go/dynamic"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/rest"
+    "k8s.io/apimachinery/pkg/util/wait"
+    "k8s.io/apimachinery/pkg/labels"
 
-	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
+    "github.com/onsi/ginkgo/v2"
+    "github.com/onsi/gomega"
 )
 
-var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
-	var clientset *kubernetes.Clientset
+var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
+    var clientset *kubernetes.Clientset
+    var dynamicClient dynamic.Interface
 
-	ginkgo.BeforeEach(func() {
-		// Set up the Kubernetes client
-		config, err := rest.InClusterConfig()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+    ginkgo.BeforeEach(func() {
+        config, err := rest.InClusterConfig()
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		clientset, err = kubernetes.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	})
+        clientset, err = kubernetes.NewForConfig(config)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	ginkgo.It("Should NOT fail to apply a deployment file for Artemis to an existing namespace", func() {
-		// Filename of the deployment YAML file
-		fileName := "ex-aao.yaml"
-
-		// Namespace where the deployment will be applied
-		namespace := "activemq-artemis-brokers"
-
-		// Read the deployment file
-		filePath, err := filepath.Abs(fileName)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		fileBytes, err := ioutil.ReadFile(filePath)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Decode the YAML manifest
-		decode := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(fileBytes), 1024)
-		var deployment appsv1.Deployment
-		err = decode.Decode(&deployment)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Apply the deployment to the existing namespace
-		_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), &deployment, metav1.CreateOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating deployment: %v", err)
-	})
-
-	ginkgo.AfterEach(func() {
-        namespace := "activemq-artemis-brokers"
-        deploymentName := "ex-aao" // Ensure this matches the deployment name in your YAML file
-
-        // Delete the deployment
-        err := clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), deploymentName, metav1.DeleteOptions{})
-        if err != nil {
-            fmt.Printf("Error deleting deployment: %v\n", err)
-        }
-
-        // Delete the broker pods
-        deleteOptions := metav1.DeleteOptions{}
-        labelSelector := "application=ex-aao-app"
-        err = clientset.CoreV1().Pods(namespace).DeleteCollection(context.TODO(), deleteOptions, metav1.ListOptions{
-            LabelSelector: labelSelector,
-        })
-        if err != nil {
-            fmt.Printf("Error deleting broker pods: %v\n", err)
-        }
+        dynamicClient, err = dynamic.NewForConfig(config)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
     })
 
-	ginkgo.It("should have 3 'broker' pods running in the namespace with the app label 'application=ex-aao-app'", func() {
-		// Namespace where the pods are expected to be running
-		namespace := "activemq-artemis-brokers"
+    ginkgo.It("Should create ActiveMQArtemis resource and verify pods", func() {
+        fileName := "ex-aao.yaml"
+        namespace := "activemq-artemis-brokers"
 
-		// Expected number of pods
-		expectedPodCount := 3
+        filePath, err := filepath.Abs(fileName)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Fetch the pods with the specified label in the namespace
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: "application=ex-aao-app",
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting pods: %v", err)
+        fileBytes, err := ioutil.ReadFile(filePath)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Debugging statements
-		fmt.Printf("Retrieved %d pods in namespace %s with the label 'application=ex-aao-app'\n", len(pods.Items), namespace)
-		for _, pod := range pods.Items {
-			fmt.Printf("Pod Name: %s\n", pod.Name)
-			// Add more details as needed
-		}
+        decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+        obj := &unstructured.Unstructured{}
+        _, gvk, err := decUnstructured.Decode(fileBytes, nil, obj)
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Actual number of pods
-		actualPodCount := len(pods.Items)
+        obj.SetAPIVersion("broker.amq.io/v1beta1")
+        obj.SetKind("ActiveMQArtemis")
 
-		// Assertion: Check if the actual number matches the expected number
-		gomega.Expect(actualPodCount).To(gomega.Equal(expectedPodCount),
-			"Expected %d 'broker' pods with the label 'application=ex-aao-app', but found %d", expectedPodCount, actualPodCount)
-	})
+        // Extract the replication factor from the YAML file
+        replicationFactor, found, err := unstructured.NestedInt64(obj.Object, "spec", "deploymentPlan", "size")
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+        gomega.Expect(found).To(gomega.BeTrue(), "Replication factor (size) not found in the YAML file")
+        expectedPodCount := int(replicationFactor)
+
+        resourceClient := dynamicClient.Resource(schema.GroupVersionResource{
+            Group:    gvk.Group,    // or "broker.amq.io"
+            Version:  gvk.Version,  // or "v1beta1"
+            Resource: "activemqartemises", // Adjust according to the CRD definition
+        }).Namespace(namespace)
+
+        _, err = resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
+        gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
+
+        // Wait for the pods to be running
+        labelSelector := fmt.Sprintf("app=%s", obj.GetLabels()["app"])
+        err = wait.PollImmediate(5*time.Second, 2*time.Minute, func() (bool, error) {
+            podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+                LabelSelector: labelSelector,
+            })
+            if err != nil {
+                return false, err
+            }
+            runningPods := 0
+            for _, pod := range podList.Items {
+                if pod.Status.Phase == "Running" {
+                    runningPods++
+                }
+            }
+            return runningPods == expectedPodCount, nil
+        })
+        gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for broker pods to be running")
+
+        // Delete the ActiveMQArtemis resource
+        err = resourceClient.Delete(context.TODO(), obj.GetName(), metav1.DeleteOptions{})
+        gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
+    })
+
+    // ... [other tests] ...
 })
