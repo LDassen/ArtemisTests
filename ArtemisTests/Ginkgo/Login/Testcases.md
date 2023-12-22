@@ -16,9 +16,10 @@
 - Log in with only a password (incorrect). [case 8]
 - Use strange/unusual characters. [case 9]
 - Use spaces as characters. [case 10]
-- Use caps lock key for letters. [case 11]
-- Use lots of characters. [case 12]
-- Log in with without entering any username or password. [case 13]
+- Use caps lock key for some characters. [case 11]
+- Use caps lock key for all characters. [case 12]
+- Use lots of characters. [case 13]
+- Log in with without entering any username or password. [case 14]
 
 # Unknowns
 - Password recovery
@@ -43,9 +44,10 @@
 |[case8](case8_test.go)|Log in with only a password (incorrect) and send a message to a queue.|Access is denied and no message is sent to queue.||
 |[case9](case9_test.go)|Log in with special characters/symbols and send a message to a queue.|Access is denied and no message is sent to queue.||
 |[case10](case10_test.go)|Log in using spaces as characters and send a message to a queue.|Access is denied and no message is sent to queue.||
-|[case11](case11_test.go)|Log in using caps lock for letters and send a message to a queue.|Access is denied and no message is sent to queue.||
-|[case12](case12_test.go)|Log in with lots of characters and send a message to a queue.|Access is denied and no message is sent to queue.||
-|[case13](case13_test.go)|Log in with without entering any username or password and send a message to a queue.|Access is denied and no message is sent to queue.||
+|[case11](case11_test.go)|Log in using caps lock for some characters and send a message to a queue.|Access is denied and no message is sent to queue.||
+|[case12](case12_test.go)|Log in using caps lock for all characters and send a message to a queue.|Access is denied and no message is sent to queue.||
+|[case13](case13_test.go)|Log in with lots of characters and send a message to a queue.|Access is denied and no message is sent to queue.||
+|[case14](case14_test.go)|Log in with without entering any username or password and send a message to a queue.|Access is denied and no message is sent to queue.||
 
 # Documentation review
 | # | Test case | Desired outcome |

@@ -18,7 +18,7 @@ var _ = ginkgo.Describe("Login Credentials Validation Test with AMQP", func() {
     ginkgo.BeforeEach(func() {
         ctx = context.Background()
         // Replace with actual credentials and Artemis server address
-        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("cgi", "cgi"))
+        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("incorrect", ""))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
         session, err = client.NewSession()
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -53,7 +53,7 @@ var _ = ginkgo.Describe("Login Credentials Validation Test with AMQP", func() {
         receiver.Close(ctx)
         
         // Print success message
-        fmt.Println("Login is successful")
+        fmt.Println("Login is not successful")
     })
 
     ginkgo.AfterEach(func() {
