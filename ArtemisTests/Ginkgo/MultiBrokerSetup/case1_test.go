@@ -33,6 +33,14 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
         dynamicClient, err = dynamic.NewForConfig(config)
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+        namespace = "activemq-artemis-brokers"
+        resourceName = "ex-aao" // This should match the name in your YAML file
+        resourceGVR = schema.GroupVersionResource{
+            Group:    "broker.amq.io",
+            Version:  "v1beta1",
+            Resource: "activemqartemises",
+        }
     })
 
     ginkgo.It("Should create ActiveMQArtemis resource and verify pods", func() {
@@ -92,5 +100,15 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
     })
 
-    // ... [other tests] ...
+    ginkgo.AfterEach(func() {
+        // Clean up: Delete the ActiveMQArtemis resource
+        if resourceName != "" {
+            fmt.Println("Deleting the ActiveMQArtemis resource:", resourceName)
+            err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Delete(context.TODO(), resourceName, metav1.DeleteOptions{})
+            if err != nil {
+                fmt.Printf("Error deleting ActiveMQArtemis resource: %v\n", err)
+            }
+        }
+    })
+
 })
