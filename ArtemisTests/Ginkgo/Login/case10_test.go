@@ -3,6 +3,7 @@ package Login_test
 import (
     "context"
     "github.com/onsi/ginkgo/v2"
+    "fmt"
     "github.com/onsi/gomega"
     "pack.ag/amqp" // AMQP library for Go
 )
