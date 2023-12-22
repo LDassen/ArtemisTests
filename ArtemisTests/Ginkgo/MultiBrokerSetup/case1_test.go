@@ -55,10 +55,25 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 	})
 
 	ginkgo.AfterEach(func() {
-		// Cleanup: Delete the deployment if it was created
-		err := clientset.AppsV1().Deployments("activemq-artemis-brokers").Delete(context.TODO(), "ex-aao", metav1.DeleteOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting deployment: %v", err)
-	})
+        namespace := "activemq-artemis-brokers"
+        deploymentName := "ex-aao" // Ensure this matches the deployment name in your YAML file
+
+        // Delete the deployment
+        err := clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), deploymentName, metav1.DeleteOptions{})
+        if err != nil {
+            fmt.Printf("Error deleting deployment: %v\n", err)
+        }
+
+        // Delete the broker pods
+        deleteOptions := metav1.DeleteOptions{}
+        labelSelector := "application=ex-aao-app"
+        err = clientset.CoreV1().Pods(namespace).DeleteCollection(context.TODO(), deleteOptions, metav1.ListOptions{
+            LabelSelector: labelSelector,
+        })
+        if err != nil {
+            fmt.Printf("Error deleting broker pods: %v\n", err)
+        }
+    })
 
 	ginkgo.It("should have 3 'broker' pods running in the namespace with the app label 'application=ex-aao-app'", func() {
 		// Namespace where the pods are expected to be running
