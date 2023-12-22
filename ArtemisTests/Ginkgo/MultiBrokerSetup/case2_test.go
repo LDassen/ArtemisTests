@@ -5,7 +5,8 @@ import (
 	"context"
 	"io/ioutil"
 	"path/filepath"
-
+	"fmt"
+	"strings"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -26,9 +27,11 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 		clientset, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// If the specific error is encountered, consider the test as passed
-		fmt.Println("namespaces \"non-existing\" not found", err)
-		ginkgo.Skip("Skipping the rest of the test due to expected error.")
+        if err != nil && strings.Contains(err.Error(), "namespaces \"non-existing\" not found") {
+            // If the specific error is encountered, consider the test as passed
+            fmt.Println("[ERROR] Non-existing namespace error encountered:", err)
+            ginkgo.Skip("Non-existing namespace error: aborting test")
+        }
 		
 	})
 
