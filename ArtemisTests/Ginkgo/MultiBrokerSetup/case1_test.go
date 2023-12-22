@@ -104,15 +104,16 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
     })
 
-    ginkgo.AfterEach(func() {
-        // Clean up: Delete the ActiveMQArtemis resource
-        if resourceName != "" {
-            fmt.Println("Deleting the ActiveMQArtemis resource:", resourceName)
-            err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Delete(context.TODO(), resourceName, metav1.DeleteOptions{})
-            if err != nil {
-                fmt.Printf("Error deleting ActiveMQArtemis resource: %v\n", err)
-            }
-        }
-    })
+	ginkgo.AfterEach(func() {
+		// Clean up: Delete the ActiveMQArtemis resource
+		if resourceName != "" {
+			fmt.Println("Deleting the ActiveMQArtemis resource:", resourceName)
+			err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Delete(context.TODO(), resourceName, metav1.DeleteOptions{})
+			if err != nil {
+				fmt.Printf("Error deleting ActiveMQArtemis resource: %v\n", err)
+			}
+		}
+	})
+	
 
 })
