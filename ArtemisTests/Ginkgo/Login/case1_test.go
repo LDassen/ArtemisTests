@@ -5,10 +5,9 @@ import (
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
     "pack.ag/amqp" // AMQP library for Go
-    "time"
 )
 
-var _ = ginkgo.Describe("Artemis Queue Deletion Test with AMQP", func() {
+var _ = ginkgo.Describe("Login Credentials Validation Test with AMQP", func() {
     var client *amqp.Client
     var session *amqp.Session
     var sender *amqp.Sender
@@ -18,15 +17,16 @@ var _ = ginkgo.Describe("Artemis Queue Deletion Test with AMQP", func() {
 
     ginkgo.BeforeEach(func() {
         ctx = context.Background()
-        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("cgi", "cgi")) // Replace with actual credentials and Artemis server address
+        // Replace with actual credentials and Artemis server address
+        client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", amqp.ConnSASLPlain("cgi", "cgi"))
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
         session, err = client.NewSession()
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     })
 
-    ginkgo.It("should check if the queue is deleted after use", func() {
-        queueName := "TESTKUBE"
-        messageText := "Test message for deletion check"
+    ginkgo.It("should send and receive a message, validating the login credentials", func() {
+        queueName := "LOGINQUEUE"
+        messageText := "Test message for login validation"
 
         // Create a sender
         sender, err = session.NewSender(
@@ -51,8 +51,6 @@ var _ = ginkgo.Describe("Artemis Queue Deletion Test with AMQP", func() {
         gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
         msg.Accept()
         receiver.Close(ctx)
-
-        gomega.Expect(err).To(gomega.BeNil()) // Expect a nil if the queue is deleted
     })
 
     ginkgo.AfterEach(func() {

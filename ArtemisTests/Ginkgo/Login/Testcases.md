@@ -33,7 +33,7 @@
 # Test cases:
 |#|Test case|Desired outcome|Actual outcome|
 |---|---|---|---|
-|[case1](case1_test.go)|Log in with the correct username and password.|Access is granted.||
+|[case1](case1_test.go)|Log in with the correct username and password.|Access is granted and message is sent to queue.||
 |[case2](case2_test.go)|Log in with incorrect username and password.|Access is denied and no errors occur.||
 |[case3](case3_test.go)|Log in with incorrect username and correct password.|Access is denied and no errors occur.||
 |[case4](case4_test.go)|Log in with correct username and incorrect password.|Access is denied and no errors occur.||
