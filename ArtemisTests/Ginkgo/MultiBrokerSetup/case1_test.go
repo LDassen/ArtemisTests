@@ -94,3 +94,19 @@ func applyDeploymentFromFile(clientset *kubernetes.Clientset, fileName, namespac
 	_, err = clientset.AppsV1().Deployments(namespace).Create(context.TODO(), &deployment, metav1.CreateOptions{})
 	return err
 }
+
+// Helper function to wait for the deployment to be available
+func waitForDeployment(clientset *kubernetes.Clientset, namespace, deploymentName string, replicas int32, timeout time.Duration) error {
+	return wait.PollImmediate(10*time.Second, timeout, func() (bool, error) {
+		deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		if deployment.Status.AvailableReplicas == replicas {
+			return true, nil
+		}
+
+		return false, nil
+	})
+}
