@@ -5,13 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"yaml"
 	"path/filepath"
-	"strings"
-	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
