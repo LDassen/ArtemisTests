@@ -6,7 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"time"
-
+	
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,12 +34,12 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 
 	ginkgo.It("should apply a deployment file for Artemis to a namespace", func() {
 		fileName := "case_1-ex-aao.yaml"
-		namespace := "activemq-artemis-brokers" 
+		namespace := "activemq-artemis-brokers" // Replace with your existing namespace or a new one
 
 		// Check if the namespace already exists
 		_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), namespace, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			// if the namespace does not exist, so create it
+			// The namespace does not exist, so create it
 			_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: namespace,
