@@ -28,25 +28,25 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 	})
 
 	ginkgo.It("Should have ActiveMQArtemis pods on different nodes", func() {
-		// Get the list of pods in the namespace
+		// Get the list of broker pods in the namespace
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: "ex-aao-app", // Update with the actual label selector
+			LabelSelector: "ex-aao-broker", // Update with the actual label selector for broker pods
 		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting pod list")
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
 
-		// Check if pods are on different nodes
+		// Check if broker pods are on different nodes
 		nodes := make(map[string]struct{})
 		for _, pod := range pods.Items {
 			nodeName := pod.Spec.NodeName
 			_, exists := nodes[nodeName]
-			gomega.Expect(exists).To(gomega.BeFalse(), fmt.Sprintf("Pod %s is on the same node as another pod", pod.Name))
+			gomega.Expect(exists).To(gomega.BeFalse(), fmt.Sprintf("Broker Pod %s is on the same node as another pod", pod.Name))
 			nodes[nodeName] = struct{}{}
 
 			// Print the pod name and associated node
-			fmt.Printf("Pod Name: %s, Node: %s\n", pod.Name, nodeName)
+			fmt.Printf("Broker Pod Name: %s, Node: %s\n", pod.Name, nodeName)
 		}
 
-		// Confirm that pods are on different nodes
-		fmt.Println("All ActiveMQArtemis pods are on different nodes.")
+		// Confirm that broker pods are on different nodes
+		fmt.Println("All ActiveMQArtemis broker pods are on different nodes.")
 	})
 })
