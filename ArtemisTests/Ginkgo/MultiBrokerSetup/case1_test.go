@@ -82,7 +82,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
         // Wait for the pods to be running
 		labelSelector := fmt.Sprintf("app=%s", obj.GetLabels()["app"])
-		err = wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) { // Increase the timeout to 5 minutes
+		err = wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) { // Increase the timeout to 5 minutes
 			podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: labelSelector,
 			})
