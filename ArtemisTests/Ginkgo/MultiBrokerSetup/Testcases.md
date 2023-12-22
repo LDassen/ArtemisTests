@@ -2,7 +2,6 @@
 - No artemis cluster is running.
 - Predefined broker configuration is correct. 
 - Broker setup contains 3 brokers. 
-- That port 61619 is opened without SSL.
 
 # Happy cases
 - Three brokers are successfully set up and are running. [1]
