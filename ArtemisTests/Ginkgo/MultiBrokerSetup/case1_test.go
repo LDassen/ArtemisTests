@@ -5,16 +5,13 @@ import (
     "fmt"
     "io/ioutil"
     "path/filepath"
-    "time"
 
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
     "k8s.io/apimachinery/pkg/runtime/schema"
     "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
     "k8s.io/client-go/dynamic"
-    "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
-    "k8s.io/apimachinery/pkg/util/wait"
 
     "github.com/onsi/ginkgo/v2"
     "github.com/onsi/gomega"
