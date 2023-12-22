@@ -3,8 +3,8 @@ kind: ActiveMQArtemis
 metadata:
   name: ex-aao
   namespace: activemq-artemis-brokers
-  #labels:
-    #app: broker
+  labels:
+    app: broker
 spec:
   acceptors:
   - expose: true
