@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"yaml"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"path/filepath"
 
 	appsv1 "k8s.io/api/apps/v1"
