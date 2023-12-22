@@ -41,6 +41,9 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 			_, exists := nodes[nodeName]
 			gomega.Expect(exists).To(gomega.BeFalse(), fmt.Sprintf("Pod %s is on the same node as another pod", pod.Name))
 			nodes[nodeName] = struct{}{}
+
+			// Print the pod name and associated node
+			fmt.Printf("Pod Name: %s, Node: %s\n", pod.Name, nodeName)
 		}
 
 		// Confirm that pods are on different nodes
