@@ -6,7 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"time"
-
+	
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
