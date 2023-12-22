@@ -23,8 +23,12 @@ import (
 var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
     var clientset *kubernetes.Clientset
     var dynamicClient dynamic.Interface
+    var resourceName string
+    var namespace string
+    var resourceGVR schema.GroupVersionResource
 
     ginkgo.BeforeEach(func() {
+        var err error
         config, err := rest.InClusterConfig()
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -35,7 +39,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
         namespace = "activemq-artemis-brokers"
-        resourceName = "ex-aao" // This should match the name in your YAML file
+        resourceName = "ex-aao"
         resourceGVR = schema.GroupVersionResource{
             Group:    "broker.amq.io",
             Version:  "v1beta1",
