@@ -56,11 +56,6 @@ var _ = ginkgo.Describe("Kubernetes Apply Deployment Test", func() {
 
         gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Deployment should not succeed in non-existing namespace")
     })
-
-    ginkgo.AfterEach(func() {
-		err := clientset.AppsV1().Deployments("activemq-artemis-brokers").Delete(context.TODO(), "ex-aao", metav1.DeleteOptions{})
-		gomega.Expect(err).To(gomega.BeNil(), "Error deleting deployment: %v", err)
-    })
 })
 
 
