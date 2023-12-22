@@ -4,13 +4,13 @@
 - That port 61619 is opened without SSL.
 
 # Happy cases
-- When a message is sent to a queue that doesn't exist, the queue is created automatically. [1]
-- Messages that are sent to queues remain in the queues until they are retrieved. [2]
-- Messages sent to existing queues do not trigger autocreation of queue. [3]
+- When a message is sent to a queue that doesn't exist, the queue is created automatically. [case 1]
+- Messages that are sent to queues remain in the queues until they are retrieved. [case 2]
+- Messages sent to existing queues do not trigger autocreation of queue. [case 3]
 
 # Fault cases
-- A queue is not created when a message is sent to a queue that does not exist. [1] (Autocreation for queues must be false.)
-- A message meant for a non-existent queue disappears. [4]
+- A queue is not created when a message is sent to a queue that does not exist. [case 1] (Autocreation for queues must be false.)
+- A message meant for a non-existent queue disappears. [case 4]
 
 # Test cases
 |#|Test case|Desired outcome|Actual outcome|

@@ -4,10 +4,10 @@
 - That port 61619 is opened without SSL.
 
 # Happy cases
-- Queues are removed in max 30 seconds when they have no messages or consumers connected. [1]
+- Queues are removed in max 30 seconds when they have no messages or consumers connected. [case 1]
 
 # Fault cases
-- Queue deletion does not happen when there are no messages or consumers connected. [1] (Autodeletion for queues must be false.)
+- Queue deletion does not happen when there are no messages or consumers connected. [case 1] (Autodeletion for queues must be false.)
 - Queue deletion occurs when messages and or consumers are connected. []
 - Queue deletion occurs when messages are still present but no producer or consumer are connected. []
 
