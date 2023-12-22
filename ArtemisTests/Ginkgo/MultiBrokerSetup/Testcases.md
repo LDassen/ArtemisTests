@@ -14,7 +14,7 @@
 # Test cases
 | # | Test case | Desired outcome | Actual outcome |
 | --- | --- | --- | --- |
-| [case_1](case1_test.go) | Deploy broker configuration. | Three brokers are deployed successfully and are running. | |
+| [case_1](case1_test.go) | Deploy broker configuration. | The ex-aao file is successfully deployed. | |
 | [case_2](case2_test.go) | Deploy the broker configuration file in a namespace that doesn't exist. | Brokers cannot be deployed and gets a "namespace not found" error. | |
 | [case_3](case3_test.go) | T.B.D. | Brokers cannot be deployed due to image pull error. | |
 | [case_4](case4_test.go) | T.B.D. |  | |
