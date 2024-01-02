@@ -46,12 +46,6 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	})
 
 	ginkgo.It("Should perform ActiveMQ Artemis Message Migration", func() {
-		// Delete the existing ActiveMQArtemis resource if it exists
-		err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Delete(context.TODO(), "ex-aao", metav1.DeleteOptions{})
-		if err != nil {
-			fmt.Printf("Warning: Error deleting existing ActiveMQArtemis resource: %v\n", err)
-		}
-
 		// Apply the YAML file to create ActiveMQArtemis resource
 		fileName := "ex-aaoMM.yaml"
 		filePath, err := filepath.Abs(fileName)
@@ -70,12 +64,21 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 
 		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
 
-		// Use Update instead of Create to handle both creation and update scenarios
-		createdObj, _, err := resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating/updating ActiveMQArtemis resource")
+		// Check if the resource already exists
+		createdObj, err := resourceClient.Get(context.TODO(), "ex-aao", metav1.GetOptions{})
+		if err != nil {
+			// If the resource doesn't exist, create it
+			createdObj, err = resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
+			fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+		} else {
+			// If the resource exists, update it
+			createdObj, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error updating ActiveMQArtemis resource")
+			fmt.Printf("Updated ActiveMQArtemis resource: %s\n", createdObj.GetName())
+		}
 
-		// Confirm that the resource has been created/updated
-		fmt.Printf("Created/Updated ActiveMQArtemis resource: %s\n", createdObj.GetName())
+		// Confirm that the resource has been created or updated
 
 		// Wait for some time for the pods to stabilize
 		time.Sleep(2 * time.Minute)
@@ -83,7 +86,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 		// Check if the starting situation of 3 brokers becomes 2 brokers
 		labelSelector := "ActiveMQArtemis=ex-aao,application=ex-aao-app"
 		expectedReplicaCount := 2
-		podsReady, err := arePodsReady(kubeClient, namespace, labelSelector, expectedReplicaCount)
+		podsReady, err := arePodsReady(namespace, labelSelector, expectedReplicaCount)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error checking pod readiness")
 
 		gomega.Expect(podsReady).To(gomega.BeTrue(), "Pods are not ready")
@@ -96,7 +99,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	})
 })
 
-func arePodsReady(kubeClient *kubernetes.Clientset, namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
+func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
 	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
