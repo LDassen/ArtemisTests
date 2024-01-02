@@ -15,8 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/wait"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -37,28 +35,52 @@ func NewGomegaWithT(t types.GomegaTestingT) gomega.Gomega {
 
 // Helper function to wait for pods to be ready
 func waitForPodsToBeReady(namespace, labelSelector string, expectedReplicaCount int) {
-	err := wait.PollImmediate(time.Second*5, time.Minute*5, func() (bool, error) {
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: labelSelector,
-		})
-		if err != nil {
-			return false, err
+	var podsReady bool
+	var err error
+
+	timeout := time.Now().Add(time.Minute * 5)
+	pollInterval := time.Second * 5
+
+	for time.Now().Before(timeout) {
+		podsReady, err = arePodsReady(namespace, labelSelector, expectedReplicaCount)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error checking if pods are ready")
+
+		if podsReady {
+			break
 		}
 
-		if len(pods.Items) != expectedReplicaCount {
+		time.Sleep(pollInterval)
+	}
+
+	gomega.Expect(podsReady).To(gomega.BeTrue(), "Pods did not become ready within the timeout period")
+}
+
+// Helper function to check if pods are ready
+func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	if len(pods.Items) != expectedReplicaCount {
+		return false, nil
+	}
+
+	for _, pod := range pods.Items {
+		if pod.Status.Phase != corev1.PodRunning {
 			return false, nil
 		}
 
-		for _, pod := range pods.Items {
-			if pod.Status.Phase != corev1.PodRunning {
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.Status != corev1.ConditionTrue {
 				return false, nil
 			}
 		}
+	}
 
-		return true, nil
-	})
-
-	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for pods to be ready")
+	return true, nil
 }
 
 // Helper function to check drainer image logs
