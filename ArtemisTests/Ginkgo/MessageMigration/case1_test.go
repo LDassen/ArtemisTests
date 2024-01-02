@@ -76,7 +76,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 		// Check if the starting situation of 3 brokers becomes 2 brokers
 		labelSelector := "ActiveMQArtemis=ex-aao,application=ex-aao-app"
 		expectedReplicaCount := 2
-		podsReady, err := arePodsReady(namespace, labelSelector, expectedReplicaCount)
+		podsReady, err := arePodsReady(kubeClient, namespace, labelSelector, expectedReplicaCount)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error checking pod readiness")
 
 		gomega.Expect(podsReady).To(gomega.BeTrue(), "Pods are not ready")
@@ -89,7 +89,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	})
 })
 
-func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
+func arePodsReady(kubeClient *kubernetes.Clientset, namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
 	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
@@ -104,5 +104,5 @@ func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bo
 		}
 	}
 
-	return read
+	return readyCount == expectedReplicaCount, nil
 }
