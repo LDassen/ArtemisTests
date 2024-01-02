@@ -59,7 +59,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 
 		for {
 			if time.Since(startTime) > maxWaitTime {
-				gomega.Fail("Timed out waiting for broker pods on at least two different nodes")
+				ginkgo.Fail("Timed out waiting for broker pods on at least two different nodes")
 			}
 
 			// Check if broker pods are on at least two different nodes
