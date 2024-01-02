@@ -3,8 +3,8 @@ kind: ActiveMQArtemis
 metadata:
   name: ex-aao
   namespace: activemq-artemis-brokers
-  labels:
-    app: broker
+  #labels:
+   # app: broker
 spec:
   acceptors:
   - expose: true
@@ -96,15 +96,15 @@ spec:
   console:
     expose: true
   deploymentPlan:
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/agent
-                operator: In
-                values:
-                  - ""
+    #affinity:
+     # nodeAffinity:
+      #  requiredDuringSchedulingIgnoredDuringExecution:
+       #   nodeSelectorTerms:
+        #    - matchExpressions:
+         #     - key: node-role.kubernetes.io/agent
+          #      operator: In
+           #     values:
+            #      - ""
     enableMetricsPlugin: true
     extraMounts:
       configMaps:
