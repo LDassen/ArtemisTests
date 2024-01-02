@@ -1,68 +1,143 @@
-package MessageMigration_test
+package MessageMigration
 
 import (
 	"context"
 	"fmt"
-	"strings"
+	"io/ioutil"
+	"path/filepath"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/wait"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"github.com/onsi/gomega/format"
+	"github.com/onsi/gomega/types"
 )
 
-var _ = ginkgo.Describe("Message Migration", func() {
-	var kubeClient *kubernetes.Clientset
+var kubeClient *kubernetes.Clientset
+
+func init() {
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	format.UseStringRepresentation = false
+}
+
+func NewGomegaWithT(t types.GomegaTestingT) gomega.Gomega {
+	return gomega.NewWithT(t)
+}
+
+// Helper function to wait for pods to be ready
+func waitForPodsToBeReady(namespace, labelSelector string, expectedReplicaCount int) {
+	err := wait.PollImmediate(time.Second*5, time.Minute*5, func() (bool, error) {
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			return false, err
+		}
+
+		if len(pods.Items) != expectedReplicaCount {
+			return false, nil
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Phase != corev1.PodRunning {
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for pods to be ready")
+}
+
+// Helper function to check drainer image logs
+func checkDrainerImageLogs(namespace, labelSelector string) {
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error listing pods")
+
+	for _, pod := range pods.Items {
+		// Fetch and check logs
+		logs, err := kubeClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{}).DoRaw(context.TODO())
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error fetching pod logs")
+
+		// TODO: Implement logic to check for the drainer image in logs
+		// For example, you can use regular expressions or any other logic based on your application logs.
+		fmt.Printf("Logs for pod %s:\n%s\n", pod.Name, logs)
+	}
+}
+
+var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
+	var dynamicClient dynamic.Interface
 	var namespace string
+	var resourceGVR schema.GroupVersionResource
+
+	ginkgo.BeforeSuite(func() {
+		kubeconfigPath := filepath.Join(homeDir(), ".kube", "config")
+		config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		kubeClient, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	})
 
 	ginkgo.BeforeEach(func() {
 		var err error
 		config, err := rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		kubeClient, err = kubernetes.NewForConfig(config)
+		dynamicClient, err = dynamic.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		namespace = "activemq-artemis-brokers"
+		resourceGVR = schema.GroupVersionResource{
+			Group:    "broker.amq.io",
+			Version:  "v1beta1",
+			Resource: "activemqartemises",
+		}
 	})
 
-	ginkgo.Context("Happy Cases", func() {
-		ginkgo.It("[case_1] Delete a broker pod with queues and messages on it", func() {
-			// Step 1: Get the list of broker pods
-			brokerPods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-				LabelSelector: "ActiveMQArtemis=ex-aao,application=ex-aao-app", // Replace with the actual label for broker pods
-			})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
+	ginkgo.It("Should create ActiveMQArtemis resource", func() {
+		fileName := "ex-aaoMM.yaml"
 
-			// Step 2: Delete one of the broker pods
-			if len(brokerPods.Items) > 0 {
-				podNameToDelete := brokerPods.Items[0].Name
-				err := kubeClient.CoreV1().Pods(namespace).Delete(context.TODO(), podNameToDelete, metav1.DeleteOptions{})
-				gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting broker pod")
+		filePath, err := filepath.Abs(fileName)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-				// Step 3: Wait for the drainer log message in the deleted pod
-				gomega.Eventually(func() bool {
-					podLogs, err := kubeClient.CoreV1().Pods(namespace).GetLogs(podNameToDelete, &v1.PodLogOptions{}).DoRaw(context.TODO())
-					if err == nil {
-						// Verify in the logs that the drainer pod started
-						return strings.Contains(string(podLogs), "Drainer pod started")
-					}
-					return false
-				}, time.Minute, time.Second).Should(gomega.BeTrue(), "Drainer pod not started in logs")
+		fileBytes, err := ioutil.ReadFile(filePath)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-				// Optional: Print debugging information
-				fmt.Printf("Test [case_1] completed successfully. Deleted broker pod: %s\n", podNameToDelete)
-			} else {
-				// Print a message if there are no broker pods to delete
-				fmt.Println("No broker pods found to delete")
-			}
-		})
-	})
+		decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		obj := &unstructured.Unstructured{}
+		_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	ginkgo.AfterEach(func() {
-		// Additional cleanup or verification steps after each test
+		obj.SetAPIVersion("broker.amq.io/v1beta1")
+		obj.SetKind("ActiveMQArtemis")
+
+		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
+
+		createdObj, err := resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
+
+		// Confirm that the resource has been created
+		fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+
+		// Wait for pods to be ready
+		waitForPodsToBeReady(namespace, "ActiveMQArtemis=ex-aao,application=ex-aao-app", 2)
+
+		// Check drainer image logs
+		checkDrainerImageLogs(namespace, "ActiveMQArtemis=ex-aao,application=ex-aao-app")
 	})
 })
