@@ -28,7 +28,7 @@ var _ = ginkgo.Describe("Message Migration", func() {
 	})
 
 	ginkgo.Context("Happy Cases", func() {
-		ginkgo.It("[case_1] Delete a broker pod with queues and messages on it", func() {
+		ginkgo.It("Delete a broker pod with queues and messages on it", func() {
 			// Step 1: Get the list of broker pods
 			brokerPods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: "ActiveMQArtemis=ex-aao,application=ex-aao-app", // Replace with the actual label for broker pods
