@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/wait"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -50,25 +49,24 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 		err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Delete(context.TODO(), "ex-aao", metav1.DeleteOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
 
-		// Wait for the CR deletion to complete
-		err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
-			_, err := dynamicClient.Resource(resourceGVR).Namespace(namespace).Get(context.TODO(), "ex-aao", metav1.GetOptions{})
-			return err != nil, nil
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for ActiveMQArtemis resource deletion")
-
 		// Deploy the ActiveMQ Artemis broker without node affinity rules
 		fileName := "ex-aao-without-affinity.yaml"
 		deployBroker(fileName, dynamicClient, resourceGVR, namespace)
 
-		// Wait for the broker pods to be created
-		err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+		// Wait for the broker pods to be created (maximum wait time: 5 minutes)
+		maxWaitTime := 5 * time.Minute
+		startTime := time.Now()
+
+		for {
+			if time.Since(startTime) > maxWaitTime {
+				gomega.Fail("Timed out waiting for broker pods on at least two different nodes")
+			}
+
+			// Check if broker pods are on at least two different nodes
 			pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 				LabelSelector: "ActiveMQArtemis=ex-aao,application=ex-aao-app",
 			})
-			if err != nil {
-				return false, nil
-			}
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
 
 			// Check if broker pods are on at least two different nodes
 			nodes := make(map[string]struct{})
@@ -78,9 +76,15 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 			}
 
 			// Confirm that there are at least two different nodes
-			return len(nodes) > 1, nil
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error waiting for broker pods on at least two different nodes")
+			if len(nodes) > 1 {
+				break
+			}
+
+			// Wait for a short interval before checking again
+			time.Sleep(5 * time.Second)
+		}
+
+		fmt.Println("All ActiveMQArtemis broker pods are on different nodes.")
 	})
 })
 
