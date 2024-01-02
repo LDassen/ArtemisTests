@@ -1,4 +1,4 @@
-apiVersion: broker.amq.io/v1beta1 #broker deployment for the node affinity testcase
+apiVersion: broker.amq.io/v1beta1 #broker deployment for the message migration testcase
 kind: ActiveMQArtemis
 metadata:
   name: ex-aao
