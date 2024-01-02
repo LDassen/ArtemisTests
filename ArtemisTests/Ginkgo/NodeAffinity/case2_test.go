@@ -1,4 +1,4 @@
-package MultiBrokerSetup_test
+package NodeAffinity_test
 
 import (
 	"context"
