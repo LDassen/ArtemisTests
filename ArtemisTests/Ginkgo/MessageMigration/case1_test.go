@@ -46,7 +46,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	})
 
 	ginkgo.It("Should perform ActiveMQ Artemis Message Migration", func() {
-		// Apply the YAML file to create ActiveMQArtemis resource
+		// Apply the YAML file to create or update ActiveMQArtemis resource
 		fileName := "ex-aaoMM.yaml"
 		filePath, err := filepath.Abs(fileName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -64,11 +64,16 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 
 		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
 
+		// Try to create the resource, update if it already exists
 		createdObj, err := resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
-
-		// Confirm that the resource has been created
-		fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+		if err != nil {
+			// Resource may already exist, try updating
+			createdObj, _, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error updating ActiveMQArtemis resource")
+		} else {
+			// Confirm that the resource has been created
+			fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+		}
 
 		// Wait for some time for the pods to stabilize
 		time.Sleep(2 * time.Minute)
