@@ -52,4 +52,3 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 		gomega.Expect(len(nodes)).To(gomega.BeNumerically(">", 1), "Expected broker pods on at least two different nodes")
 	})
 })
-// done
