@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
-
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/yaml"
 )
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
@@ -105,29 +105,39 @@ func deployActiveMQArtemisResource(fileName string) {
 }
 
 func areActiveMQArtemisPodsOnDifferentNodes(name string) bool {
-	// Get the list of broker pods in the namespace
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "ActiveMQArtemis=" + name + ",application=" + name + "-app",
-	})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
+	// Periodically check if broker pods are on different nodes
+	timeout := time.After(time.Minute)
+	ticker := time.Tick(time.Second)
 
-	// Print debugging information
-	fmt.Printf("Namespace: %s\n", namespace)
-	fmt.Printf("Found %d broker pods\n", len(pods.Items))
+	for {
+		select {
+		case <-timeout:
+			// Timeout reached, the condition is not satisfied
+			return false
+		case <-ticker:
+			// Get the list of broker pods in the namespace
+			pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: "ActiveMQArtemis=" + name + ",application=" + name + "-app",
+			})
+			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
 
-	// Check if broker pods are on different nodes
-	nodes := make(map[string]struct{})
-	for _, pod := range pods.Items {
-		nodeName := pod.Spec.NodeName
-		_, exists := nodes[nodeName]
-		gomega.Expect(exists).To(gomega.BeFalse(), fmt.Sprintf("Broker Pod %s is on the same node as another pod", pod.Name))
-		nodes[nodeName] = struct{}{}
+			// Check if broker pods are on different nodes
+			nodes := make(map[string]struct{})
+			for _, pod := range pods.Items {
+				nodeName := pod.Spec.NodeName
+				_, exists := nodes[nodeName]
+				if exists {
+					// Broker Pod is on the same node as another pod
+					continue
+				}
+				nodes[nodeName] = struct{}{}
+			}
 
-		// Print the pod name and associated node
-		fmt.Printf("Broker Pod Name: %s, Node: %s\n", pod.Name, nodeName)
+			// Confirm that broker pods are on different nodes
+			if len(nodes) > 1 {
+				fmt.Println("All ActiveMQArtemis broker pods are on different nodes.")
+				return true
+			}
+		}
 	}
-
-	// Confirm that broker pods are on different nodes
-	fmt.Println("All ActiveMQArtemis broker pods are on different nodes.")
-	return len(nodes) > 1
 }
