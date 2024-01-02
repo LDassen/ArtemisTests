@@ -50,7 +50,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error deleting ActiveMQArtemis resource")
 
 		// Deploy the ActiveMQ Artemis broker without node affinity rules
-		fileName := "ex-aao-without-affinity.yaml"
+		fileName := "ex-aaoNA.yaml"
 		deployBroker(fileName, dynamicClient, resourceGVR, namespace)
 
 		// Wait for the broker pods to be created (maximum wait time: 5 minutes)
