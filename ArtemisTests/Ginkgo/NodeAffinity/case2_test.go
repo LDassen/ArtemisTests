@@ -3,12 +3,13 @@ package NodeAffinity_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	"github.com/onsi/ginkgo/v2"
@@ -47,13 +48,25 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 	})
 })
 
+func retryOnNotFound(action func() error) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (bool, error) {
+		err := action()
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	})
+}
+
 func deleteActiveMQArtemisResource(name string) error {
 	// Get the dynamic client
 	resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
 
-	// Delete the ActiveMQArtemis resource
-	err := resourceClient.Delete(context.TODO(), name, metav1.DeleteOptions{})
-	if err != nil && !errors.IsNotFound(err) {
+	// Delete the ActiveMQArtemis resource with retry on NotFound error
+	err := retryOnNotFound(func() error {
+		return resourceClient.Delete(context.TODO(), name, metav1.DeleteOptions{})
+	})
+	if err != nil {
 		return err
 	}
 
