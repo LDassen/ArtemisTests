@@ -1,1 +1,1 @@
-package MessageMigration
+package MessageMigration_test
