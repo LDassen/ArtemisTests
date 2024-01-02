@@ -105,3 +105,4 @@ func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bo
 	}
 
 	return read
+}
