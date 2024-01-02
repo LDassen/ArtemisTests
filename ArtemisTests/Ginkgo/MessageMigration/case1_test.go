@@ -1,4 +1,4 @@
-package MessageMigration
+package MessageMigration_test
 
 import (
 	"context"
@@ -13,13 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/homedir"  // Import homeDir from client-go util package
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/format"
-	"github.com/onsi/gomega/types"
 )
 
 var kubeClient *kubernetes.Clientset
