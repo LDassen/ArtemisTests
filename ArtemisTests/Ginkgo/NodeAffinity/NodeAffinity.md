@@ -12,7 +12,7 @@
 # Test cases
 | # | Test case | Desired outcome | Actual outcome |
 | --- | --- | --- | --- |
-| [case_1](case1_test.go) | Check if the brokers aren't running on one node. | The brokers get deployed on different nodes (as much as possible). | |
+| [case_1](case1_test.go) | Check if the brokers aren't running on one node. | The brokers get deployed on atleast 2 or more different nodes. | |
 | [case_2](case2_test.go) | Turn off node affinity in configuration. | The brokers get deployed on different nodes (as much as possible). | |
 
 # Documentation Review
