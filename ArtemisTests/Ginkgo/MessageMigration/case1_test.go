@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 	"reflect"
 
-	//corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
-	//"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/onsi/ginkgo/v2"
@@ -104,6 +103,20 @@ func getPodLogs(dynamicClient dynamic.Interface, namespace, podName string) (str
 		Version:  "v1",
 		Resource: "pods",
 	}).Namespace(namespace).Name(podName).SubResource("log").DoRaw(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	return string(podLogs), nil
+}
+
+func getPodLogsDirect(coreClient *rest.RESTClient, namespace, podName string) (string, error) {
+	podLogs, err := coreClient.
+		Get().
+		Namespace(namespace).
+		Name(podName).
+		Resource("pods").
+		SubResource("log").
+		DoRaw(context.TODO())
 	if err != nil {
 		return "", err
 	}
