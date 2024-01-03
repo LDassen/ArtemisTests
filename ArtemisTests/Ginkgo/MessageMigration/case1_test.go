@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/onsi/ginkgo/v2"
@@ -62,7 +62,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
 		if err == nil {
 			// Resource already exists, update it if needed
-			if !gomega.Equal(existingObj, obj) {
+			if !reflect.DeepEqual(existingObj.Object, obj.Object) {
 				fmt.Printf("ActiveMQArtemis resource already exists, updating configuration.\n")
 
 				// Set the UID and ResourceVersion to perform an update
