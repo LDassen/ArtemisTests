@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	unstructuredv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
@@ -34,9 +33,9 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 
 		// Use in-cluster config if running in a Kubernetes cluster
 		if kubeconfig, err = rest.InClusterConfig(); err != nil {
-			// If not in a cluster, use kubeconfig file from home directory
+			// If not in a cluster, use kubeconfig file from the home directory
 			home := homedir.HomeDir()
-			kubeconfig, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+			kubeconfig, err = rest.InClusterConfig()
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}
 
@@ -56,20 +55,21 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 		}
 	})
 
+	ginkgo.AfterEach(func() {
+		// Add cleanup logic here, e.g., delete resources created during the test
+	})
+
 	ginkgo.It("Should scale down ActiveMQ Artemis brokers and verify message migration", func() {
 		// Scale down ActiveMQ Artemis brokers
 		scaleDownSize := 2
 		scaleDownActiveMQArtemis(scaleDownSize)
 
 		// Check if brokers scaled down correctly
-		verifyBrokerScaling(scaleDownSize)
+		verifyBrokerScalingEventually(scaleDownSize)
 
 		// Wait for the drainer pod to start and print its logs
-		drainerPodLogs := waitForDrainerPod()
+		drainerPodLogs := waitForDrainerPodEventually()
 		fmt.Printf("Drainer Pod Logs:\n%s\n", drainerPodLogs)
-
-		// TODO: Add logic to verify message migration in the logs
-		// Example: assertMessageMigration(drainerPodLogs)
 	})
 })
 
@@ -83,8 +83,8 @@ func scaleDownActiveMQArtemis(size int) {
 	fileBytes, err := ioutil.ReadFile(filePath)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	obj := &unstructured.Unstructured{}
+	decUnstructured := yaml.NewDecodingSerializer(unstructuredv1.UnstructuredJSONScheme)
+	obj := &unstructuredv1.Unstructured{}
 	_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
@@ -94,31 +94,64 @@ func scaleDownActiveMQArtemis(size int) {
 	resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
 
 	// Set replicas to the desired size
-	unstructured.SetNestedField(obj.Object, int64(size), "spec", "replicas")
+	unstructuredv1.SetNestedField(obj.Object, int64(size), "spec", "replicas")
 
-	_, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+	_, err = resourceClient.Update(context.TODO(), obj, v1.UpdateOptions{})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error scaling down ActiveMQ Artemis brokers")
 }
 
 // Helper function to verify if brokers scaled down correctly
-func verifyBrokerScaling(expectedSize int) {
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "app=activemq-artemis-broker",
-	})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+func verifyBrokerScalingEventually(expectedSize int) {
+	gomega.Eventually(func() int {
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
+			LabelSelector: "app=activemq-artemis-broker",
+		})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	actualSize := len(pods.Items)
-	gomega.Expect(actualSize).To(gomega.Equal(expectedSize), "Brokers did not scale down correctly")
+		return len(pods.Items)
+	}, time.Minute, time.Second).Should(gomega.Equal(expectedSize), "Brokers did not scale down correctly")
 }
 
 // Helper function to wait for the drainer pod to start and return its logs
-func waitForDrainerPod() string {
-	// TODO: Implement logic to wait for drainer pod and get logs
-	// Example: Use Kubernetes API to wait for drainer pod and retrieve logs
-	// You may need to customize this based on your environment and deployment
+func waitForDrainerPodEventually() string {
+	var lastPodName string
 
-	return "Drainer pod logs not implemented in the test."
+	gomega.Eventually(func() string {
+		// Get the list of pods
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
+			LabelSelector: "app=activemq-artemis-broker",
+		})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Check if there is a pod going down
+		if len(pods.Items) == 1 && lastPodName != pods.Items[0].Name {
+			// Get the logs of the last pod before it is scaled down
+			logs, err := getPodLogs(pods.Items[0].Name)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			lastPodName = pods.Items[0].Name
+
+			return logs
+		}
+
+		return ""
+	}, time.Minute, time.Second).ShouldNot(gomega.BeEmpty(), "Logs not retrieved for the pod going down")
 }
 
-// TODO: Add more helper functions or assertions as needed for message migration verification
-// Example: assertMessageMigration(logs string)
+// Helper function to get logs of a pod
+func getPodLogs(podName string) (string, error) {
+	podLogOptions := &v1.PodLogOptions{}
+
+	podLogs, err := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, podLogOptions).Stream(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+
+	logBytes, err := ioutil.ReadAll(podLogs)
+	if err != nil {
+		return "", err
+	}
+
+	return string(logBytes), nil
+}
