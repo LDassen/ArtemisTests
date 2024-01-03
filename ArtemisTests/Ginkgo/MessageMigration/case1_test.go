@@ -1,4 +1,4 @@
-package CustomResourceDefinitionTest
+package MessageMigration_test
 
 import (
 	"bytes"
