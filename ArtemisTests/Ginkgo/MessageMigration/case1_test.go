@@ -44,15 +44,15 @@ var _ = ginkgo.Describe("Queue Sender Test", func() {
 
 		// Set your pod name and namespace
 		podName = "ex-aao-ss-2"
-		namespace = "your-namespace"
+		namespace = "activemq-artemis-brokers"
 	})
 
 	ginkgo.It("should send messages to a specific queue in a pod", func() {
 		queueName := "Sabrine"
 		messageText := "Hello, this is a test message"
 
-		// Get the pod
-		pod, err := kubeClient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+		// Get the pod (this step is optional and can be removed if not used)
+		_, err := kubeClient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Create a sender
@@ -65,7 +65,7 @@ var _ = ginkgo.Describe("Queue Sender Test", func() {
 		for i := 0; i < 3; i++ {
 			err = sender.Send(ctx, amqp.NewMessage([]byte(fmt.Sprintf("%s %d", messageText, i+1))))
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			
+
 			// Wait for a short duration between messages
 			time.Sleep(1 * time.Second)
 		}
