@@ -8,13 +8,13 @@ import (
 	"reflect"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	v1 "k8s.io/api/core/v1" // Import v1 instead of metav1
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -65,7 +65,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
 
 		// Try to get the existing resource
-		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
+		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), v1.GetOptions{})
 		if err == nil {
 			// Resource already exists, update it if needed
 			if !reflect.DeepEqual(existingObj.Object, obj.Object) {
@@ -75,7 +75,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 				obj.SetUID(existingObj.GetUID())
 				obj.SetResourceVersion(existingObj.GetResourceVersion())
 
-				_, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+				_, err = resourceClient.Update(context.TODO(), obj, v1.UpdateOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error updating ActiveMQArtemis resource")
 			} else {
 				fmt.Printf("ActiveMQArtemis resource already exists and has the same configuration.\n")
@@ -84,7 +84,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		}
 
 		// If the resource does not exist, create it
-		createdObj, err := resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
+		createdObj, err := resourceClient.Create(context.TODO(), obj, v1.CreateOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
 
 		// Confirm that the resource has been created
@@ -96,13 +96,13 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		time.Sleep(sleepDuration)
 
 		// Get the list of pods in the namespace
-		pods, err := k8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+		pods, err := k8sClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Print logs of the deleted broker pod
 		for _, pod := range pods.Items {
 			if pod.DeletionTimestamp != nil {
-				podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &metav1.PodLogOptions{}).DoRaw(context.TODO())
+				podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).DoRaw(context.TODO())
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				fmt.Printf("Logs of deleted broker pod %s:\n%s\n", pod.Name, podLogs)
 			}
