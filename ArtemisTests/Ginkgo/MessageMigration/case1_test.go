@@ -58,7 +58,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		obj.SetAPIVersion("broker.amq.io/v1beta1")
 		obj.SetKind("ActiveMQArtemis")
 
-		resourceClient := clientset.Dynamic().Resource(resourceGVR).Namespace(namespace)
+		resourceClient := clientset.DynamicClient.Resource(resourceGVR).Namespace(namespace)
 
 		// Try to get the existing resource
 		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
