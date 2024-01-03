@@ -1,149 +1,63 @@
-package MessageMigration_test
+package CustomResourceDefinitionTest
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"time"
+	"strings"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	unstructuredv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	dynamicClient dynamic.Interface
-	resourceGVR  schema.GroupVersionResource
-	kubeClient   *kubernetes.Clientset
-	namespace     string
-)
+var _ = ginkgo.Describe("Kubernetes Apply CRD Test", func() {
+	var clientset *kubernetes.Clientset
 
-func initializeClients() {
-	var err error
-	var kubeconfig *rest.Config
-
-	// Use in-cluster config if running in a Kubernetes cluster
-	if kubeconfig, err = rest.InClusterConfig(); err != nil {
-		// If not in a cluster, use kubeconfig file from the home directory
-		home := homedir.HomeDir()
-		kubeconfig, err = rest.InClusterConfig()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	}
-
-	// Create dynamic client
-	dynamicClient, err = dynamic.NewForConfig(kubeconfig)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	// Create Kubernetes client
-	kubeClient, err = kubernetes.NewForConfig(kubeconfig)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	namespace = "activemq-artemis-brokers"
-	resourceGVR = schema.GroupVersionResource{
-		Group:    "broker.amq.io",
-		Version:  "v1beta1",
-		Resource: "activemqartemises",
-	}
-}
-
-func scaleDownActiveMQArtemis(size int) {
-	fileName := "ex-aaoMM.yaml"
-
-	filePath, err := filepath.Abs(fileName)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	fileBytes, err := ioutil.ReadFile(filePath)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	decUnstructured := yaml.NewDecodingSerializer(unstructuredv1.UnstructuredJSONScheme)
-	obj := &unstructuredv1.Unstructured{}
-	_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-	obj.SetAPIVersion("broker.amq.io/v1beta1")
-	obj.SetKind("ActiveMQArtemis")
-
-	resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
-
-	// Set replicas to the desired size
-	unstructuredv1.SetNestedField(obj.Object, int64(size), "spec", "replicas")
-
-	_, err = resourceClient.Update(context.TODO(), obj, v1.UpdateOptions{})
-	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error scaling down ActiveMQ Artemis brokers")
-}
-
-func verifyBrokerScalingEventually(expectedSize int) {
-	gomega.Eventually(func() int {
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
-			LabelSelector: "app=activemq-artemis-broker",
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		return len(pods.Items)
-	}, time.Minute, time.Second).Should(gomega.Equal(expectedSize), "Brokers did not scale down correctly")
-}
-
-func waitForDrainerPodEventually() string {
-	var lastPodName string
-
-	gomega.Eventually(func() string {
-		// Get the list of pods
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
-			LabelSelector: "app=activemq-artemis-broker",
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Check if there is a pod going down
-		if len(pods.Items) == 1 && lastPodName != pods.Items[0].Name {
-			// Get the logs of the last pod before it is scaled down
-			logs, err := getPodLogs(pods.Items[0].Name)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			lastPodName = pods.Items[0].Name
-
-			return logs
-		}
-
-		return ""
-	}, time.Minute, time.Second).ShouldNot(gomega.BeEmpty(), "Logs not retrieved for the pod going down")
-}
-
-func getPodLogs(podName string) (string, error) {
-	podLogOptions := &v1.PodLogOptions{} // Fix import
-
-	podLogs, err := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, podLogOptions).Stream(context.TODO())
-	if err != nil {
-		return "", err
-	}
-	defer podLogs.Close()
-
-	logBytes, err := ioutil.ReadAll(podLogs)
-	if err != nil {
-		return "", err
-	}
-
-	return string(logBytes), nil
-}
-
-var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	ginkgo.BeforeEach(func() {
-		initializeClients()
+		// Set up the Kubernetes client
+		config, err := rest.InClusterConfig()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		clientset, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
-	ginkgo.It("Should scale down ActiveMQ Artemis brokers and verify message migration", func() {
-		scaleDownSize := 2
-		scaleDownActiveMQArtemis(scaleDownSize)
-		verifyBrokerScalingEventually(scaleDownSize)
-		drainerPodLogs := waitForDrainerPodEventually()
-		fmt.Printf("Drainer Pod Logs:\n%s\n", drainerPodLogs)
+	ginkgo.It("Should reapply a CRD file for CustomResourceDefinition", func() {
+		fileName := "ex-aaoMM.yaml"
+
+		// Read the file
+		filePath, err := filepath.Abs(filepath.Join(homedir.HomeDir(), "path/to", fileName))
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		fileBytes, err := ioutil.ReadFile(filePath)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Decode the YAML manifest
+		decode := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(fileBytes), 1024)
+		var crd apiextv1.CustomResourceDefinition
+		err = decode.Decode(&crd)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Try to apply the CRD
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			_, updateErr := clientset.ApiextensionsV1().CustomResourceDefinitions().Update(context.TODO(), &crd, metav1.UpdateOptions{})
+			if updateErr == nil {
+				fmt.Println("CRD re-applied successfully!")
+				return nil
+			}
+			fmt.Println("[ERROR] Error reapplying CRD:", updateErr)
+			return updateErr
+		})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to reapply CRD")
 	})
 })
