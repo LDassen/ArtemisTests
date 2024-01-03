@@ -14,8 +14,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -23,9 +21,7 @@ import (
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 	var dynamicClient dynamic.Interface
-	var kubeClient *kubernetes.Clientset
 	var namespace string
-	var resourceGVR schema.GroupVersionResource
 
 	ginkgo.BeforeEach(func() {
 		var err error
@@ -33,7 +29,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 
 		// Use in-cluster config if running in a Kubernetes cluster
 		if kubeconfig, err = rest.InClusterConfig(); err != nil {
-			// If not in a cluster, use kubeconfig file from the home directory
+			// If not in a cluster, use kubeconfig file from home directory
 			home := homedir.HomeDir()
 			kubeconfig, err = rest.InClusterConfig()
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -43,16 +39,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 		dynamicClient, err = dynamic.NewForConfig(kubeconfig)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Create Kubernetes client
-		kubeClient, err = kubernetes.NewForConfig(kubeconfig)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
 		namespace = "activemq-artemis-brokers"
-		resourceGVR = schema.GroupVersionResource{
-			Group:    "broker.amq.io",
-			Version:  "v1beta1",
-			Resource: "activemqartemises",
-		}
 	})
 
 	ginkgo.AfterEach(func() {
