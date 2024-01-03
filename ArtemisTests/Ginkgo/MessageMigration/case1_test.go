@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"reflect"
 
-	corev1 "k8s.io/api/core/v1"
+	//corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
+	//"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/onsi/ginkgo/v2"
@@ -90,12 +90,13 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
 	ginkgo.It("Should retrieve logs from ex-aao-ss-2 pod", func() {
 		podName := "ex-aao-ss-2"
-		namespace := "activemq-artemis-brokers" 
+		namespace := "activemq-artemis-brokers"
 
 		logs, err := getPodLogs(dynamicClient, namespace, podName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		fmt.Printf("Logs from %s pod:\n%s\n", podName, logs)
+	})
 })
 
 func getPodLogs(dynamicClient dynamic.Interface, namespace, podName string) (string, error) {
