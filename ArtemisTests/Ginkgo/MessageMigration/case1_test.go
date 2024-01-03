@@ -102,10 +102,13 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
 		// Print logs of the deleted broker pod
 		for _, pod := range pods.Items {
-			if pod.DeletionTimestamp != nil {
-				podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{}).DoRaw(context.TODO())
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				fmt.Printf("Logs of deleted broker pod %s:\n%s\n", pod.Name, podLogs)
+    		if pod.DeletionTimestamp != nil {
+        		// Wait for a brief moment to ensure logs are available
+        		time.Sleep(5 * time.Second)
+
+        		podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).DoRaw(context.TODO())
+        		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+        		fmt.Printf("Logs of deleted broker pod %s:\n%s\n", pod.Name, podLogs)
 			}
 		}
 	})
