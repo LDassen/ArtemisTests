@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -16,7 +15,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	//apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
