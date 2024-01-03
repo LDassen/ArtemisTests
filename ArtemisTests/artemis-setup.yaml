@@ -1,0 +1,117 @@
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  labels:
+    app: broker
+  name: ex-aao
+  namespace: activemq-artemis-brokers
+spec:
+  acceptors:
+  - expose: true
+    name: ssl
+    needClientAuth: false
+    port: 61617
+    protocols: AMQP, CORE
+    sslEnabled: true
+    sslSecret: ssl-acceptor-ssl-secret
+    verifyHost: true
+  addressSettings:
+    addressSetting:
+    - enableMetrics: true
+    - addressFullPolicy: PAGE
+      autoCreateAddresses: true
+      autoCreateDeadLetterResources: true
+      autoCreateJmsQueues: true
+      autoCreateJmsTopics: true
+      autoCreateQueues: true
+      autoDeleteAddresses: true
+      autoDeleteQueues: true
+      deadLetterAddress: DEAD.MDM
+      deadLetterQueuePrefix: DEAD.MDM
+      defaultAddressRoutingType: ANYCAST
+      defaultMaxConsumers: -1
+      expiryAddress: ExpiryQueue
+      expiryDelay: -1
+      match: q.mdm#
+      maxDeliveryAttempts: 10
+      maxSizeBytes: "-1"
+      messageCounterHistoryDayLimit: 10
+      redeliveryDelay: 300000
+    - addressFullPolicy: PAGE
+      autoCreateAddresses: true
+      autoCreateDeadLetterResources: true
+      autoCreateJmsQueues: true
+      autoCreateJmsTopics: true
+      autoCreateQueues: true
+      autoDeleteAddresses: true
+      autoDeleteQueues: true
+      deadLetterAddress: DEAD.MHB
+      deadLetterQueuePrefix: DEAD.MHB
+      defaultAddressRoutingType: ANYCAST
+      defaultMaxConsumers: -1
+      expiryAddress: ExpiryQueue
+      expiryDelay: -1
+      match: q.mhb#
+      maxDeliveryAttempts: 10
+      maxSizeBytes: "-1"
+      messageCounterHistoryDayLimit: 10
+      redeliveryDelay: 300000
+    - addressFullPolicy: PAGE
+      autoCreateAddresses: true
+      autoCreateDeadLetterResources: true
+      autoCreateJmsQueues: true
+      autoCreateJmsTopics: true
+      autoCreateQueues: true
+      autoDeleteAddresses: true
+      autoDeleteQueues: true
+      deadLetterAddress: DEAD.CMD
+      deadLetterQueuePrefix: DEAD.CMD
+      defaultAddressRoutingType: ANYCAST
+      defaultMaxConsumers: -1
+      expiryAddress: ExpiryQueue
+      expiryDelay: -1
+      match: q.cmd#
+      maxDeliveryAttempts: 10
+      maxSizeBytes: "-1"
+      messageCounterHistoryDayLimit: 10
+      redeliveryDelay: 300000
+    - addressFullPolicy: PAGE
+      autoCreateAddresses: true
+      autoCreateDeadLetterResources: true
+      autoCreateJmsQueues: true
+      autoCreateJmsTopics: true
+      autoCreateQueues: true
+      autoDeleteAddresses: true
+      autoDeleteQueues: true
+      deadLetterAddress: DLQ
+      defaultAddressRoutingType: ANYCAST
+      defaultMaxConsumers: -1
+      expiryAddress: ExpiryQueue
+      expiryDelay: -1
+      match: '#'
+      maxDeliveryAttempts: 10
+      maxSizeBytes: "-1"
+      messageCounterHistoryDayLimit: 10
+      redeliveryDelay: 300000
+  console:
+    expose: true
+  deploymentPlan:
+    enableMetricsPlugin: true
+    extraMounts:
+      configMaps:
+      - ca-bundle
+      secrets:
+      - amq-ssl-secret
+    journalType: aio
+    managementRBACEnabled: true
+    messageMigration: true
+    persistenceEnabled: true
+    podSecurityContext:
+      fsGroup: 0
+      fsGroupChangePolicy: OnRootMismatch
+    requireLogin: true
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    size: 3
