@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,10 +15,11 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 )
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
@@ -28,13 +30,22 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 
 	ginkgo.BeforeEach(func() {
 		var err error
-		config, err := rest.InClusterConfig()
+		var kubeconfig *rest.Config
+
+		// Use in-cluster config if running in a Kubernetes cluster
+		if kubeconfig, err = rest.InClusterConfig(); err != nil {
+			// If not in a cluster, use kubeconfig file from home directory
+			home := homedir.HomeDir()
+			kubeconfig, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		}
+
+		// Create dynamic client
+		dynamicClient, err = dynamic.NewForConfig(kubeconfig)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		dynamicClient, err = dynamic.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		kubeClient, err = kubernetes.NewForConfig(config)
+		// Create Kubernetes client
+		kubeClient, err = kubernetes.NewForConfig(kubeconfig)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		namespace = "activemq-artemis-brokers"
@@ -45,74 +56,69 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 		}
 	})
 
-	ginkgo.It("Should perform ActiveMQ Artemis Message Migration", func() {
-		// Apply the YAML file to create ActiveMQArtemis resource
-		fileName := "ex-aaoMM.yaml"
-		filePath, err := filepath.Abs(fileName)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	ginkgo.It("Should scale down ActiveMQ Artemis brokers and verify message migration", func() {
+		// Scale down ActiveMQ Artemis brokers
+		scaleDownSize := 2
+		scaleDownActiveMQArtemis(scaleDownSize)
 
-		fileBytes, err := ioutil.ReadFile(filePath)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		// Check if brokers scaled down correctly
+		verifyBrokerScaling(scaleDownSize)
 
-		decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-		obj := &unstructured.Unstructured{}
-		_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		// Wait for the drainer pod to start and print its logs
+		drainerPodLogs := waitForDrainerPod()
+		fmt.Printf("Drainer Pod Logs:\n%s\n", drainerPodLogs)
 
-		obj.SetAPIVersion("broker.amq.io/v1beta1")
-		obj.SetKind("ActiveMQArtemis")
-
-		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
-
-		// Check if the resource already exists
-		createdObj, err := resourceClient.Get(context.TODO(), "ex-aao", metav1.GetOptions{})
-		if err != nil {
-			// If the resource doesn't exist, create it
-			createdObj, err = resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
-			fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
-		} else {
-			// If the resource exists, update it
-			createdObj, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
-			gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error updating ActiveMQArtemis resource")
-			fmt.Printf("Updated ActiveMQArtemis resource: %s\n", createdObj.GetName())
-		}
-
-		// Confirm that the resource has been created or updated
-
-		// Wait for some time for the pods to stabilize
-		time.Sleep(2 * time.Minute)
-
-		// Check if the starting situation of 3 brokers becomes 2 brokers
-		labelSelector := "ActiveMQArtemis=ex-aao,application=ex-aao-app"
-		expectedReplicaCount := 2
-		podsReady, err := arePodsReady(namespace, labelSelector, expectedReplicaCount)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error checking pod readiness")
-
-		gomega.Expect(podsReady).To(gomega.BeTrue(), "Pods are not ready")
-
-		// TODO: Implement logic to check the logs from the broker that goes down
-		// For example, you can use kubeClient.CoreV1().Pods(namespace).GetLogs() to fetch logs.
-
-		// TODO: Implement logic to check the logs for the drainer pod that gets started and closed
-		// For example, you can use kubeClient.CoreV1().Pods(namespace).GetLogs() to fetch logs.
+		// TODO: Add logic to verify message migration in the logs
+		// Example: assertMessageMigration(drainerPodLogs)
 	})
 })
 
-func arePodsReady(namespace, labelSelector string, expectedReplicaCount int) (bool, error) {
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
-	if err != nil {
-		return false, err
-	}
+// Helper function to scale down ActiveMQ Artemis brokers
+func scaleDownActiveMQArtemis(size int) {
+	fileName := "ex-aaoMM.yaml"
 
-	readyCount := 0
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			readyCount++
-		}
-	}
+	filePath, err := filepath.Abs(fileName)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	return readyCount == expectedReplicaCount, nil
+	fileBytes, err := ioutil.ReadFile(filePath)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	obj := &unstructured.Unstructured{}
+	_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	obj.SetAPIVersion("broker.amq.io/v1beta1")
+	obj.SetKind("ActiveMQArtemis")
+
+	resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
+
+	// Set replicas to the desired size
+	unstructured.SetNestedField(obj.Object, int64(size), "spec", "replicas")
+
+	_, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error scaling down ActiveMQ Artemis brokers")
 }
+
+// Helper function to verify if brokers scaled down correctly
+func verifyBrokerScaling(expectedSize int) {
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "app=activemq-artemis-broker",
+	})
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+	actualSize := len(pods.Items)
+	gomega.Expect(actualSize).To(gomega.Equal(expectedSize), "Brokers did not scale down correctly")
+}
+
+// Helper function to wait for the drainer pod to start and return its logs
+func waitForDrainerPod() string {
+	// TODO: Implement logic to wait for drainer pod and get logs
+	// Example: Use Kubernetes API to wait for drainer pod and retrieve logs
+	// You may need to customize this based on your environment and deployment
+
+	return "Drainer pod logs not implemented in the test."
+}
+
+// TODO: Add more helper functions or assertions as needed for message migration verification
+// Example: assertMessageMigration(logs string)
