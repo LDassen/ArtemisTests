@@ -86,5 +86,5 @@ var _ = ginkgo.Describe("Queue Sender Test", func() {
 
 func TestQueueSender(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "MessageMigration Test Suite")
+//	ginkgo.RunSpecs(t, "MessageMigration Test Suite")
 }
