@@ -58,7 +58,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		obj.SetAPIVersion("broker.amq.io/v1beta1")
 		obj.SetKind("ActiveMQArtemis")
 
-		resourceClient := clientset.DynamicClient.Resource(resourceGVR).Namespace(namespace)
+		resourceClient := clientset.Dynamic().Resource(resourceGVR).Namespace(namespace)
 
 		// Try to get the existing resource
 		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
@@ -91,20 +91,9 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		podName := "ex-aao-ss-2"
 		namespace := "activemq-artemis-brokers"
 
-		logs, err := getPodLogsDirect(clientset, namespace, podName)
+		logs, err := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{}).DoRaw(context.TODO())
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		fmt.Printf("Logs from %s pod:\n%s\n", podName, logs)
 	})
 })
-
-func getPodLogsDirect(clientset *kubernetes.Clientset, namespace, podName string) (string, error) {
-	podLogs, err := clientset.CoreV1().
-		Pods(namespace).
-		GetLogs(podName, &corev1.PodLogOptions{}).
-		DoRaw(context.TODO())
-	if err != nil {
-		return "", err
-	}
-	return string(podLogs), nil
-}
