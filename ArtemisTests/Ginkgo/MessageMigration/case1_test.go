@@ -8,8 +8,6 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"pack.ag/amqp"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -23,7 +21,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	var err error
 
 	var kubeClient *kubernetes.Clientset
-	var podName string
 	var namespace string
 
 	ginkgo.BeforeEach(func() {
@@ -31,9 +28,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616",
+			"amqp://ex-aao-ss-2.activemq-artemis-brokers.svc.cluster.local:61616",
 			amqp.ConnSASLPlain("cgi", "cgi"),
-			amqp.ConnIdleTimeout(30*time.Second),  // Increase the timeout as needed
+			amqp.ConnIdleTimeout(30*time.Second),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		session, err = client.NewSession()
@@ -45,8 +42,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		kubeClient, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Set your pod name and namespace
-		podName = "ex-aao-ss-2"
+		// Set the namespace
 		namespace = "activemq-artemis-brokers"
 	})
 
