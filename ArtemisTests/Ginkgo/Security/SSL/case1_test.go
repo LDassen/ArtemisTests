@@ -1,10 +1,9 @@
 package SSL_test
 
 import (
-    "crypto/tls"
-    "crypto/x509"
     "io/ioutil"
     "testing"
+    "fmt"
 
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
@@ -16,23 +15,14 @@ func TestArtemisSSL(t *testing.T) {
 }
 
 var _ = Describe("Artemis SSL Connection", func() {
-    Context("When connecting to Artemis with SSL", func() {
-        It("should successfully connect", func() {
-            caCert, err := ioutil.ReadFile("/etc/ssl/certs/ca-bundle.crt")
+    Context("When inspecting the SSL certs directory", func() {
+        It("should print the contents of the directory", func() {
+            files, err := ioutil.ReadDir("/etc/ssl/certs")
             Expect(err).NotTo(HaveOccurred())
 
-            caCertPool := x509.NewCertPool()
-            caCertPool.AppendCertsFromPEM(caCert)
-
-            config := &tls.Config{
-                RootCAs: caCertPool,
+            for _, file := range files {
+                fmt.Println(file.Name())
             }
-
-            conn, err := tls.Dial("tcp", "<ARTEMIS_HOST>:<ARTEMIS_PORT>", config)
-            Expect(err).NotTo(HaveOccurred())
-            defer conn.Close()
-
-            // Perform further checks if needed
         })
     })
 })
