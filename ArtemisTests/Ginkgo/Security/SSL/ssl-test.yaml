@@ -11,5 +11,4 @@ spec:
       - reference:
           name: ca-bundle  # Name of your ConfigMap
         mount: true
-        mountPath: /etc/ssl
-    # Other execution details like 'image', 'command', 'args', etc.
+        mountPath: /etc/ssl/certs
