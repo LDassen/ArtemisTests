@@ -11,7 +11,7 @@
 # Test cases
 |#|Test case|Desired outcome|Actual outcome|
 |---|---|---|---|
-| [case_1](#case1_test.go) | Go into the scrape port and see if there are metrics being produced. | The Artemis setup produces metrics. ||
+| [case_1](case1_test.go) | Go into the scrape port and see if there are metrics being produced. | The Artemis setup produces metrics. ||
 
 # Documentation review
 | # | Test case | Desired outcome |
