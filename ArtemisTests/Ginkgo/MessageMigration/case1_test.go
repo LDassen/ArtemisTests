@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
-	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -18,21 +18,17 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1" 
 )
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 	var dynamicClient dynamic.Interface
-	var k8sClient *kubernetes.Clientset
 	var namespace string
 	var resourceGVR schema.GroupVersionResource
 
 	ginkgo.BeforeEach(func() {
 		var err error
-		config, err := rest.InClusterConfig()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		k8sClient, err = kubernetes.NewForConfig(config)
+		config, err := rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		dynamicClient, err = dynamic.NewForConfig(config)
@@ -90,26 +86,25 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
 		// Confirm that the resource has been created
 		fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+	})
 
-		// Wait for a while to allow the broker pod to be deleted
-		sleepDuration := 30 * time.Second
-		fmt.Printf("Waiting for %v...\n", sleepDuration)
-		time.Sleep(sleepDuration)
+	ginkgo.It("Should retrieve logs from ex-aao-ss-2 pod", func() {
+		podName := "ex-aao-ss-2"
+		namespace := "activemq-artemis-brokers" 
 
-		// Get the list of pods in the namespace
-		pods, err := k8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+		logs, err := getPodLogs(dynamicClient, namespace, podName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Print logs of the deleted broker pod
-		for _, pod := range pods.Items {
-    		if pod.DeletionTimestamp != nil {
-        		// Wait for a brief moment to ensure logs are available
-        		time.Sleep(5 * time.Second)
-
-        		podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{}).DoRaw(context.TODO())
-        		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-        		fmt.Printf("Logs of deleted broker pod %s:\n%s\n", pod.Name, podLogs)
-    		}
-		}
-	})
+		fmt.Printf("Logs from %s pod:\n%s\n", podName, logs)
 })
+
+func getPodLogs(dynamicClient dynamic.Interface, namespace, podName string) (string, error) {
+	podLogs, err := dynamicClient.Resource(schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "pods",
+	}).Namespace(namespace).Name(podName).SubResource("log").DoRaw(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	return string(podLogs), nil
+}
