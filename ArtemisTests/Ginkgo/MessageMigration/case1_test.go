@@ -64,7 +64,7 @@ var _ = ginkgo.Describe("Queue Sender Test", func() {
 		// Send messages to the specific queue in the pod
 		for i := 0; i < 3; i++ {
 			err = sender.Send(ctx, amqp.NewMessage([]byte(fmt.Sprintf("%s %d", messageText, i+1))))
-			gomega.Expect(err).NotTo(gomega.HaveOccurred()
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			
 			// Wait for a short duration between messages
 			time.Sleep(1 * time.Second)
