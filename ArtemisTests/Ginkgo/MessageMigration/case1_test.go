@@ -30,6 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616", amqp.ConnSASLPlain("cgi", "cgi"))
+		//client, err = amqp.Dial("amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616", amqp.ConnSASLPlain("cgi", "cgi"))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		session, err = client.NewSession()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
