@@ -3,8 +3,6 @@ package Metrics_test
 import (
     "net/http"
     "io/ioutil"
-    "time"
-
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
 )
