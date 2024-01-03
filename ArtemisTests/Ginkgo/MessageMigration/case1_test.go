@@ -1,63 +1,87 @@
 package MessageMigration_test
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
+	"reflect"
 
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/homedir"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	//apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = ginkgo.Describe("Kubernetes Apply CRD Test", func() {
-	var clientset *kubernetes.Clientset
+var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
+	var dynamicClient dynamic.Interface
+	var namespace string
+	var resourceGVR schema.GroupVersionResource
 
 	ginkgo.BeforeEach(func() {
-		// Set up the Kubernetes client
+		var err error
 		config, err := rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		clientset, err = kubernetes.NewForConfig(config)
+		dynamicClient, err = dynamic.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		namespace = "activemq-artemis-brokers"
+		resourceGVR = schema.GroupVersionResource{
+			Group:    "broker.amq.io",
+			Version:  "v1beta1",
+			Resource: "activemqartemises",
+		}
 	})
 
-	ginkgo.It("Should reapply a CRD file for CustomResourceDefinition", func() {
+	ginkgo.It("Should create or update ActiveMQArtemis resource", func() {
 		fileName := "ex-aaoMM.yaml"
 
-		// Read the file
-		filePath, err := filepath.Abs(filepath.Join(homedir.HomeDir(), "path/to", fileName))
+		filePath, err := filepath.Abs(fileName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		fileBytes, err := ioutil.ReadFile(filePath)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Decode the YAML manifest
-		decode := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(fileBytes), 1024)
-		var crd apiextv1.CustomResourceDefinition
-		err = decode.Decode(&crd)
+		decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+		obj := &unstructured.Unstructured{}
+		_, _, err = decUnstructured.Decode(fileBytes, nil, obj)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Try to apply the CRD
-		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			_, updateErr := clientset.ApiextensionsV1().CustomResourceDefinitions().Update(context.TODO(), &crd, metav1.UpdateOptions{})
-			if updateErr == nil {
-				fmt.Println("CRD re-applied successfully!")
-				return nil
+		obj.SetAPIVersion("broker.amq.io/v1beta1")
+		obj.SetKind("ActiveMQArtemis")
+
+		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
+
+		// Try to get the existing resource
+		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
+		if err == nil {
+			// Resource already exists, update it if needed
+			if !reflect.DeepEqual(existingObj.Object, obj.Object) {
+				fmt.Printf("ActiveMQArtemis resource already exists, updating configuration.\n")
+
+				// Set the UID and ResourceVersion to perform an update
+				obj.SetUID(existingObj.GetUID())
+				obj.SetResourceVersion(existingObj.GetResourceVersion())
+
+				_, err = resourceClient.Update(context.TODO(), obj, metav1.UpdateOptions{})
+				gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error updating ActiveMQArtemis resource")
+			} else {
+				fmt.Printf("ActiveMQArtemis resource already exists and has the same configuration.\n")
 			}
-			fmt.Println("[ERROR] Error reapplying CRD:", updateErr)
-			return updateErr
-		})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to reapply CRD")
+			return
+		}
+
+		// If the resource does not exist, create it
+		createdObj, err := resourceClient.Create(context.TODO(), obj, metav1.CreateOptions{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error creating ActiveMQArtemis resource")
+
+		// Confirm that the resource has been created
+		fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
 	})
 })
