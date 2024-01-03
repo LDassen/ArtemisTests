@@ -14,13 +14,12 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	"github.com/onsi/ginkgo/v2"
+	"k8s.io/client-go/util/homedir" 
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 )
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
-	var dynamicClient dynamic.Interface
 	var namespace string
 
 	ginkgo.BeforeEach(func() {
@@ -34,10 +33,6 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
 			kubeconfig, err = rest.InClusterConfig()
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		}
-
-		// Create dynamic client
-		dynamicClient, err = dynamic.NewForConfig(kubeconfig)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		namespace = "activemq-artemis-brokers"
 	})
