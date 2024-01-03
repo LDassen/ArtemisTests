@@ -15,7 +15,7 @@ import (
 	"pack.ag/amqp"
 )
 
-var _ = ginkgo.Describe("Queue Sender Test", func() {
+var _ = ginkgo.Describe("MessageMigration Test", func() {
 	var client *amqp.Client
 	var session *amqp.Session
 	var sender *amqp.Sender
@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("Queue Sender Test", func() {
 		ctx = context.Background()
 
 		// Establish connection to the Artemis broker
-		client, err = amqp.Dial("amqp://ex-aao-ss-2.activemq-artemis-brokers.svc.cluster.local:61616", amqp.ConnSASLPlain("cgi", "cgi"))
+		client, err = amqp.Dial("amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616", amqp.ConnSASLPlain("cgi", "cgi"))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		session, err = client.NewSession()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
