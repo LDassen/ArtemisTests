@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/onsi/ginkgo/v2"
@@ -36,7 +35,7 @@ func initializeClients() {
 	if kubeconfig, err = rest.InClusterConfig(); err != nil {
 		// If not in a cluster, use kubeconfig file from the home directory
 		home := homedir.HomeDir()
-		kubeconfig, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+		kubeconfig, err = rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	}
 
@@ -119,7 +118,7 @@ func waitForDrainerPodEventually() string {
 }
 
 func getPodLogs(podName string) (string, error) {
-	podLogOptions := &v1.PodLogOptions{}
+	podLogOptions := &v1.PodLogOptions{} // Fix import
 
 	podLogs, err := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, podLogOptions).Stream(context.TODO())
 	if err != nil {
