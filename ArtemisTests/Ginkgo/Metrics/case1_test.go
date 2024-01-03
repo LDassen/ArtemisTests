@@ -25,6 +25,6 @@ var _ = Describe("Artemis Metrics", func() {
 
         // Check the HTTP status code and body content
         Expect(resp.StatusCode).To(Equal(http.StatusOK))
-        Expect(bodyString).To(ContainSubstring("your_metric_keyword")) // Replace with actual keyword
+        Expect(bodyString).To(ContainSubstring("artemis_address_size")) // Replace with actual keyword
     })
 })
