@@ -25,23 +25,30 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
-
+	
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617", //"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619"
+			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
+		// Create a session
 		session, err = client.NewSession()
+		if err != nil {
+			// Close the client on error
+			client.Close()
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		}
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
+	
 		// Initialize Kubernetes client with in-cluster config
 		config, err := clientcmd.BuildConfigFromFlags("", "")
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		kubeClient, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
+	
 		// Set the namespace
 		namespace = "activemq-artemis-brokers"
 	})
