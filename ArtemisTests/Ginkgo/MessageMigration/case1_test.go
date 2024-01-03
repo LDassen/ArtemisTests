@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/onsi/ginkgo/v2"
@@ -20,12 +22,16 @@ import (
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 	var dynamicClient dynamic.Interface
+	var k8sClient *kubernetes.Clientset
 	var namespace string
 	var resourceGVR schema.GroupVersionResource
 
 	ginkgo.BeforeEach(func() {
 		var err error
 		config, err := rest.InClusterConfig()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		k8sClient, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		dynamicClient, err = dynamic.NewForConfig(config)
@@ -83,5 +89,23 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
 		// Confirm that the resource has been created
 		fmt.Printf("Created ActiveMQArtemis resource: %s\n", createdObj.GetName())
+
+		// Wait for a while to allow the broker pod to be deleted
+		sleepDuration := 30 * time.Second
+		fmt.Printf("Waiting for %v...\n", sleepDuration)
+		time.Sleep(sleepDuration)
+
+		// Get the list of pods in the namespace
+		pods, err := k8sClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Print logs of the deleted broker pod
+		for _, pod := range pods.Items {
+			if pod.DeletionTimestamp != nil {
+				podLogs, err := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &metav1.PodLogOptions{}).DoRaw(context.TODO())
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				fmt.Printf("Logs of deleted broker pod %s:\n%s\n", pod.Name, podLogs)
+			}
+		}
 	})
 })
