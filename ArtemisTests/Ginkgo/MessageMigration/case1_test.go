@@ -14,48 +14,48 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/homedir" 
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
+
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 )
 
-var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
-	var namespace string
+var (
+	dynamicClient dynamic.Interface
+	resourceGVR  schema.GroupVersionResource
+	kubeClient   *kubernetes.Clientset
+	namespace     string
+)
 
-	ginkgo.BeforeEach(func() {
-		var err error
-		var kubeconfig *rest.Config
+func initializeClients() {
+	var err error
+	var kubeconfig *rest.Config
 
-		// Use in-cluster config if running in a Kubernetes cluster
-		if kubeconfig, err = rest.InClusterConfig(); err != nil {
-			// If not in a cluster, use kubeconfig file from home directory
-			home := homedir.HomeDir()
-			kubeconfig, err = rest.InClusterConfig()
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		}
+	// Use in-cluster config if running in a Kubernetes cluster
+	if kubeconfig, err = rest.InClusterConfig(); err != nil {
+		// If not in a cluster, use kubeconfig file from the home directory
+		home := homedir.HomeDir()
+		kubeconfig, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	}
 
-		namespace = "activemq-artemis-brokers"
-	})
+	// Create dynamic client
+	dynamicClient, err = dynamic.NewForConfig(kubeconfig)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	ginkgo.AfterEach(func() {
-		// Add cleanup logic here, e.g., delete resources created during the test
-	})
+	// Create Kubernetes client
+	kubeClient, err = kubernetes.NewForConfig(kubeconfig)
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-	ginkgo.It("Should scale down ActiveMQ Artemis brokers and verify message migration", func() {
-		// Scale down ActiveMQ Artemis brokers
-		scaleDownSize := 2
-		scaleDownActiveMQArtemis(scaleDownSize)
+	namespace = "activemq-artemis-brokers"
+	resourceGVR = schema.GroupVersionResource{
+		Group:    "broker.amq.io",
+		Version:  "v1beta1",
+		Resource: "activemqartemises",
+	}
+}
 
-		// Check if brokers scaled down correctly
-		verifyBrokerScalingEventually(scaleDownSize)
-
-		// Wait for the drainer pod to start and print its logs
-		drainerPodLogs := waitForDrainerPodEventually()
-		fmt.Printf("Drainer Pod Logs:\n%s\n", drainerPodLogs)
-	})
-})
-
-// Helper function to scale down ActiveMQ Artemis brokers
 func scaleDownActiveMQArtemis(size int) {
 	fileName := "ex-aaoMM.yaml"
 
@@ -82,7 +82,6 @@ func scaleDownActiveMQArtemis(size int) {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error scaling down ActiveMQ Artemis brokers")
 }
 
-// Helper function to verify if brokers scaled down correctly
 func verifyBrokerScalingEventually(expectedSize int) {
 	gomega.Eventually(func() int {
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), v1.ListOptions{
@@ -94,7 +93,6 @@ func verifyBrokerScalingEventually(expectedSize int) {
 	}, time.Minute, time.Second).Should(gomega.Equal(expectedSize), "Brokers did not scale down correctly")
 }
 
-// Helper function to wait for the drainer pod to start and return its logs
 func waitForDrainerPodEventually() string {
 	var lastPodName string
 
@@ -120,7 +118,6 @@ func waitForDrainerPodEventually() string {
 	}, time.Minute, time.Second).ShouldNot(gomega.BeEmpty(), "Logs not retrieved for the pod going down")
 }
 
-// Helper function to get logs of a pod
 func getPodLogs(podName string) (string, error) {
 	podLogOptions := &v1.PodLogOptions{}
 
@@ -137,3 +134,17 @@ func getPodLogs(podName string) (string, error) {
 
 	return string(logBytes), nil
 }
+
+var _ = ginkgo.Describe("ActiveMQ Artemis Message Migration Test", func() {
+	ginkgo.BeforeEach(func() {
+		initializeClients()
+	})
+
+	ginkgo.It("Should scale down ActiveMQ Artemis brokers and verify message migration", func() {
+		scaleDownSize := 2
+		scaleDownActiveMQArtemis(scaleDownSize)
+		verifyBrokerScalingEventually(scaleDownSize)
+		drainerPodLogs := waitForDrainerPodEventually()
+		fmt.Printf("Drainer Pod Logs:\n%s\n", drainerPodLogs)
+	})
+})
