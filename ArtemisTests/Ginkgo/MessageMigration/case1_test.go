@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 	"reflect"
 
-	//corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/client-go/dynamic"
-	//"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/onsi/ginkgo/v2"
@@ -21,7 +20,7 @@ import (
 )
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
-	var dynamicClient dynamic.Interface
+	var clientset *kubernetes.Clientset
 	var namespace string
 	var resourceGVR schema.GroupVersionResource
 
@@ -31,7 +30,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		config, err := rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		dynamicClient, err = dynamic.NewForConfig(config)
+		clientset, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		namespace = "activemq-artemis-brokers"
@@ -59,7 +58,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		obj.SetAPIVersion("broker.amq.io/v1beta1")
 		obj.SetKind("ActiveMQArtemis")
 
-		resourceClient := dynamicClient.Resource(resourceGVR).Namespace(namespace)
+		resourceClient := clientset.Dynamic().Resource(resourceGVR).Namespace(namespace)
 
 		// Try to get the existing resource
 		existingObj, err := resourceClient.Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
@@ -92,20 +91,9 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		podName := "ex-aao-ss-2"
 		namespace := "activemq-artemis-brokers"
 
-		logs, err := getPodLogs(dynamicClient, namespace, podName)
+		logs, err := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{}).DoRaw(context.TODO())
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		fmt.Printf("Logs from %s pod:\n%s\n", podName, logs)
 	})
 })
-
-func getPodLogs(dynamicClient dynamic.Interface, namespace, podName string) (string, error) {
-	podLogs, err := dynamicClient.Resource(schema.GroupVersionResource{
-		Version:  "v1",
-		Resource: "pods",
-	}).Namespace(namespace).Name(podName).SubResource("log").DoRaw(context.TODO())
-	if err != nil {
-		return "", err
-	}
-	return string(podLogs), nil
-}

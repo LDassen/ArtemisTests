@@ -19,3 +19,6 @@
 | # | Test case | Desired outcome |
 | --- | --- | --- | 
 | # | Review documentation in ADO WIKI. | Confirm that the documentation accurately reflects the behavior of the node affinity (high availability), including any configurable parameters and troubleshooting steps. | 
+
+# Issues/ Concerns
+- Not sure if the node affinity also gets triggered by the cluster itself. Whether node affinity is turned on or off, there is no discernable difference in the deployment of the brokers. Also not sure if kubernetes cluster has its own node balancing for pods on nodes. Seems to always occupy two nodes, never one. 
