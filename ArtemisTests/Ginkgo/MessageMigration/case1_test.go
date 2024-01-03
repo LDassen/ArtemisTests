@@ -28,7 +28,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.activemq-artemis-brokers.svc.cluster.local:61616",
+			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61616",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
@@ -69,7 +69,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(30 * time.Second)
 
 		// Check queues of ex-aao-ss-0 and ex-aao-ss-1 to find the specific message
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
