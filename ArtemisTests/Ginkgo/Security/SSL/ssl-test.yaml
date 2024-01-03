@@ -1,0 +1,15 @@
+apiVersion: tests.testkube.io/v1
+kind: TestExecution
+metadata:
+  name: ssl-execution
+  namespace: testkube
+spec:
+  test:
+    name: ssl  # Name of the Test resource
+  executionRequest:
+    envConfigMaps:
+      - reference:
+          name: ca-bundle  # Name of your ConfigMap
+        mount: true
+        mountPath: /etc/ssl/certs
+    # Other execution details like 'image', 'command', 'args', etc.
