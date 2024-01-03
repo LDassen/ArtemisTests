@@ -17,7 +17,7 @@ func TestArtemisSSL(t *testing.T) {
 var _ = Describe("Artemis SSL Connection", func() {
     Context("When inspecting the SSL certs directory", func() {
         It("should print the contents of the directory", func() {
-            files, err := ioutil.ReadDir("/etc/tmp/cabundle")
+            files, err := ioutil.ReadDir("/etc/ssl")
             Expect(err).NotTo(HaveOccurred())
 
             for _, file := range files {
