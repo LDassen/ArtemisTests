@@ -22,7 +22,6 @@ import (
 
 var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 	var dynamicClient dynamic.Interface
-	var clientset *kubernetes.Clientset
 	var namespace string
 	var resourceGVR schema.GroupVersionResource
 
@@ -33,9 +32,6 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		dynamicClient, err = dynamic.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		clientset, err = kubernetes.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		namespace = "activemq-artemis-brokers"
@@ -94,11 +90,21 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Deployment Test", func() {
 
 	ginkgo.It("Should retrieve logs from ex-aao-ss-2 pod", func() {
 		podName := "ex-aao-ss-2"
-		namespace := "activemq-artemis-brokers"
+		namespace := "activemq-artemis-brokers" 
 
-		logs, err := yourGetPodLogsFunction(namespace, podName)
+		logs, err := getPodLogs(dynamicClient, namespace, podName)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		fmt.Printf("Logs from %s pod:\n%s\n", podName, logs)
-	})
 })
+
+func getPodLogs(dynamicClient dynamic.Interface, namespace, podName string) (string, error) {
+	podLogs, err := dynamicClient.Resource(schema.GroupVersionResource{
+		Version:  "v1",
+		Resource: "pods",
+	}).Namespace(namespace).Name(podName).SubResource("log").DoRaw(context.TODO())
+	if err != nil {
+		return "", err
+	}
+	return string(podLogs), nil
+}
