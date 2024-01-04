@@ -21,7 +21,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         // Create a CA certificate pool and add cert to it
         caCertPool := x509.NewCertPool()
         caCertPool.AppendCertsFromPEM(caCert)
-        }
+        })
     })
 
     It("should successfully connect", func() {
