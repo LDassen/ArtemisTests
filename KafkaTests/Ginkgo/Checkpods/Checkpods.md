@@ -15,9 +15,9 @@
 # Test cases
 | # | Test case | Desired outcome | Actual outcome |
 | --- | --- | --- | --- |
-| 1 | Check the amount of running brokers in the kafka-brokers namespace. | There are three brokers running. |  |
-| 2 | Check the amount of running operator pods in the kafka-operator namespace. | There is one operator pod running. |  |
-| 3 | Check the amount of running cruise control pods in the kafka-brokers namespace. | There is one cruise control pod running. |  |
+| [case_1](case1_test.go) | Check the amount of running brokers in the kafka-brokers namespace. | There are three brokers running. |  |
+| [case_2](case2_test.go) | Check the amount of running operator pods in the kafka-operator namespace. | There is one operator pod running. |  |
+| [case_3](case3_test.go) | Check the amount of running cruise control pods in the kafka-brokers namespace. | There is one cruise control pod running. |  |
 
 # Documentation Review
 | # | Test case | Desired outcome |

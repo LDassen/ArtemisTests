@@ -12,7 +12,7 @@ import (
 )
 
 var _ = Describe("Kafka Broker Pods", func() {
-	It("should have the correct 'kafka-brokers-#' prefixed pods running", func() {
+	It("should have the correct 'kafka-brokers-cruisecontrol-' prefixed pods running", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -20,34 +20,21 @@ var _ = Describe("Kafka Broker Pods", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "kafka-brokers"
-		expectedPodPrefix0 := "kafka-brokers-0-"
-		expectedPodPrefix1 := "kafka-brokers-1-"
-		expectedPodPrefix2 := "kafka-brokers-2-"
+		expectedPodPrefix := "kafka-brokers-cruisecontrol-"
 
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil(), "Error getting pods: %v", err)
 
 		var actualPodCount int
 		for _, pod := range pods.Items {
-			if strings.HasPrefix(pod.Name, expectedPodPrefix0) && pod.Status.Phase == "Running" {
-				fmt.Printf("Pod Name0: %s\n", pod.Name)
-				
-				actualPodCount++
-			}
-			if strings.HasPrefix(pod.Name, expectedPodPrefix1) && pod.Status.Phase == "Running" {
-				fmt.Printf("Pod Name1: %s\n", pod.Name)
-				
-				actualPodCount++
-			}
-			if strings.HasPrefix(pod.Name, expectedPodPrefix2) && pod.Status.Phase == "Running" {
-				fmt.Printf("Pod Name2: %s\n", pod.Name)
-				
+			if strings.HasPrefix(pod.Name, expectedPodPrefix) && pod.Status.Phase == "Running" {
+				fmt.Printf("Pod Name: %s\n", pod.Name)
 				actualPodCount++
 			}
 		}
 
 		// Set your expected number of 'kafka-brokers-' pods here
-		expectedPodCount := 3 
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'kafka-brokers-' pods, but found %d", expectedPodCount, actualPodCount)
+		expectedPodCount := 1 
+		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'kafka-brokers-cruisecontrol-' pods, but found %d", expectedPodCount, actualPodCount)
 	})
 })
