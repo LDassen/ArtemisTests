@@ -74,7 +74,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
-		receiver, err = session.NewReceiver(
+		receiver, err := session.NewReceiver(
 			amqp.LinkSourceAddress(sourceAddress),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -106,17 +106,25 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
 		gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
 
+		// Create receivers for other pods first
+		for _, pod := range pods.Items {
+			if pod.Name != lastBrokerAddr {
+				receiver, err = session.NewReceiver(
+					amqp.LinkSourceAddress(fmt.Sprintf("%s.%s", pod.Name, queueName)),
+				)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				fmt.Printf("Receiver created for broker '%s'.\n", pod.Name)
+			}
+		}
+
 		// Flag to determine if the message is found
 		messageFound := false
 
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
-			// Create a new receiver for each iteration
-			receiver, err = session.NewReceiver(
-				amqp.LinkSourceAddress(sourceAddress),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
+			if pod.Name == lastBrokerAddr {
+				continue
+			}
 
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
