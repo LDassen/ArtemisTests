@@ -1,1 +1,1 @@
-package <folder_name>
+package Checkpods
