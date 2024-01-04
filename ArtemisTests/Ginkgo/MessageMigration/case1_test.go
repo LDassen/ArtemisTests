@@ -87,6 +87,11 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			fmt.Println("No pods found with label 'application=ex-aao-app'")
 		}
 
+		// Create a new session after deleting the pod
+		session, err = client.NewSession()
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		fmt.Println("New session created successfully after deleting the pod.")
+
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
