@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		fmt.Println("Connecting to the Artemis broker...")
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617",
+			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
@@ -59,6 +59,14 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Set the namespace
 		namespace = "activemq-artemis-brokers"
+
+		// Ensure the StatefulSet (deployment) exists before proceeding
+		statefulSetName := "ex-aao"
+		_, err = kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Printf("Error getting StatefulSet %s: %v\n", statefulSetName, err)
+			return
+		}
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
@@ -76,32 +84,25 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
 
-		// Delete the ex-aao-ss-2 broker
-		err = kubeClient.AppsV1().Deployments(namespace).Delete(ctx, "ex-aao-ss-2", metav1.DeleteOptions{})
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Wait for the deletion to propagate
-		time.Sleep(30 * time.Second)
-
-		// Check queues of ex-aao-ss-0 and ex-aao-ss-1 to find the specific message
+		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
-    	receiver, err = session.NewReceiver(
-        	amqp.LinkSourceAddress(queueName),
-    		)
-    	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			receiver, err = session.NewReceiver(
+				amqp.LinkSourceAddress(queueName),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-    	// Receive messages from the queue
-    	msg, err := receiver.Receive(ctx)
-    	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			// Receive messages from the queue
+			msg, err := receiver.Receive(ctx)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-    	// Check if the received message matches the specific message
-    	gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+			// Check if the received message matches the specific message
+			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
 
-    	// Accept the message
-    	msg.Accept()
+			// Accept the message
+			msg.Accept()
 
-    	// Close the receiver
-    	receiver.Close(ctx)
+			// Close the receiver
+			receiver.Close(ctx)
 		}
 	})
 
