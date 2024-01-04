@@ -77,7 +77,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(1 * time.Second)
 
 		// Delete the ex-aao-ss-2 broker
-		err = kubeClient.AppsV1().Deployments(namespace).Delete(ctx, "ex-aao-ss-2", metav1.DeleteOptions{})
+		err = kubeClient.AppsV1().Deployments(namespace).Delete(ctx, "ex-aao", metav1.DeleteOptions{})
+		//err = kubeClient.AppsV1().Deployments(namespace).Delete(ctx, "ex-aao-ss-2", metav1.DeleteOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Wait for the deletion to propagate
