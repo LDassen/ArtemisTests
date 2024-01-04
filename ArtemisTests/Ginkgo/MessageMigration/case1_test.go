@@ -84,24 +84,24 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(30 * time.Second)
 
 		// Check queues of ex-aao-ss-0 and ex-aao-ss-1 to find the specific message
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
-			receiver, err = session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+    	receiver, err = session.NewReceiver(
+        	amqp.LinkSourceAddress(queueName),
+    		)
+    	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-			// Receive messages from the queue
-			msg, err := receiver.Receive(ctx)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+    	// Receive messages from the queue
+    	msg, err := receiver.Receive(ctx)
+    	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-			// Check if the received message matches the specific message
-			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+    	// Check if the received message matches the specific message
+    	gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
 
-			// Accept the message
-			msg.Accept()
+    	// Accept the message
+    	msg.Accept()
 
-			// Close the receiver
-			receiver.Close(ctx)
+    	// Close the receiver
+    	receiver.Close(ctx)
 		}
 	})
 
