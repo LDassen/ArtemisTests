@@ -1,17 +1,33 @@
 package SSL_test
 
 import (
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
+    "pack.ag/amqp"
+    "context"
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
-    "pack.ag/amqp" 
-    "context"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
-    // ... (setup and teardown code)
+    var config *tls.Config
+
+    BeforeEach(func() {
+        // Load the CA certificate
+        caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem") // Replace with actual path to your CA cert
+        Expect(err).NotTo(HaveOccurred())
+
+        // Create a CA certificate pool and add cert to it
+        caCertPool := x509.NewCertPool()
+        caCertPool.AppendCertsFromPEM(caCert)
+
+        // Create a TLS configuration
+        config = &tls.Config{
+            RootCAs: caCertPool,
+            // Add other necessary TLS configurations here
+        }
+    })
 
     It("should successfully connect", func() {
         // AMQP communication
