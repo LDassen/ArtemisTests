@@ -24,7 +24,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
             RootCAs: caCertPool,
         }
 
-        conn, err := tls.Dial("tcp", "ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617", config)
+        conn, err := tls.Dial("tcp", "ex-aao-hdls-svc.activemq-artemis-brokers:61617", config)
         Expect(err).NotTo(HaveOccurred())
         defer conn.Close()
 
