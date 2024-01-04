@@ -84,14 +84,14 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
 	
-		// Create a receiver for the specific queue
-		receiver, err := session.NewReceiver(
-			amqp.LinkSourceAddress(queueName),
-		)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+			// Create a receiver for the specific queue
+			receiver, err := session.NewReceiver(
+				amqp.LinkSourceAddress(queueName),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -101,10 +101,10 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	
 			// Accept the message
 			msg.Accept()
-		}
 	
-		// Close the receiver after the loop
-		receiver.Close(ctx)
+			// Close the receiver
+			receiver.Close(ctx)
+		}
 	})
 
 	ginkgo.AfterEach(func() {
