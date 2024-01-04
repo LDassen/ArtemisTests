@@ -61,7 +61,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		namespace = "activemq-artemis-brokers"
 
 		// Ensure the StatefulSet (deployment) exists before proceeding
-		statefulSetName := "ex-aao"
+		statefulSetName := "ex-aao-ss"
 		_, err = kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("Error getting StatefulSet %s: %v\n", statefulSetName, err)
