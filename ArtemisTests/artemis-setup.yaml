@@ -8,6 +8,13 @@ metadata:
 spec:
   acceptors:
   - expose: true
+    name: testkube
+    needClientAuth: false
+    port: 61619
+    protocols: AMQP, CORE
+    sslEnabled: false
+    verifyHost: false
+  - expose: true
     name: ssl
     needClientAuth: false
     port: 61617
