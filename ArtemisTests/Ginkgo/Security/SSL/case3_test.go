@@ -4,25 +4,10 @@ import (
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     "pack.ag/amqp"
-    "context"
-    "crypto/tls"
-    "crypto/x509"
-    "io/ioutil"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
     var config *tls.Config
-
-    BeforeEach(func() {
-        // Load the CA certificate
-        caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem") // Replace with actual path to your CA cert
-        Expect(err).NotTo(HaveOccurred())
-
-        // Create a CA certificate pool and add cert to it
-        caCertPool := x509.NewCertPool()
-        caCertPool.AppendCertsFromPEM(caCert)
-        })
-    })
 
     It("should successfully connect", func() {
         // AMQP communication
@@ -36,7 +21,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         // Sending a message
         sender, err := session.NewSender(amqp.LinkTargetAddress("SSL"))
         Expect(err).NotTo(HaveOccurred())
-        message := "SSL doesn't work!"
+        message := "SSL works!"
         err = sender.Send(context.Background(), amqp.NewMessage([]byte(message)))
         Expect(err).NotTo(HaveOccurred())
 

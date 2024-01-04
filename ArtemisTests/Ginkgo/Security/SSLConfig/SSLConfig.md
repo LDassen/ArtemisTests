@@ -18,6 +18,8 @@
 | [case_3](case3_test.go) | Setup a producer that sends a message to a queue. The producer should not have the bundle mounted. Check to see whether message is there and can be retrieved. | The message is not produced inside the queue and cannot be retrieved. ||
 | [case_4](case4_test.go) | Setup a producer that sends a message to a queue. The producer should have the bundle mounted. Check to see whether message is there and can be retrieved. | The message is not produced inside the queue and cannot be retrieved. |???|
 
+*Case 3 and 4 will be put in another folder called SSL because they do not need to have the configmap mounted.*
+
 # Documentation review
 | # | Test case | Desired outcome |
 | --- | --- | --- | 
