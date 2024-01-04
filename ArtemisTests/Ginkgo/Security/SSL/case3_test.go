@@ -16,11 +16,13 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
             "amqps://ex-aao-ssl-0-svc.activemq-artemis-brokers.svc:61617",
             amqp.ConnSASLPlain("cgi", "cgi"),
         )
+
+        // Check for specific error message
         if err != nil {
-            if _, ok := err.(x509.UnknownAuthorityError); ok {
+            if err.Error() == "tls: failed to verify certificate: x509: certificate signed by unknown authority" {
                 Skip("Skipping test due to certificate signed by unknown authority")
             }
-            Fail(err.Error())
+            Fail("Unexpected error occurred: " + err.Error())
         }
         defer client.Close()
 
