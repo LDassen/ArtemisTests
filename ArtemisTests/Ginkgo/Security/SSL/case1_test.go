@@ -31,7 +31,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
 
     It("should successfully connect", func() {
         // AMQP communication
-        client, err := amqp.Dial("amqps://ex-aao-ssl-0.activemq-artemis-brokers.svc.cluster.local:61617", amqp.ConnSASLPlain("cgi", "cgi"), amqp.ConnTLSConfig(config))
+        client, err := amqp.Dial("amqps://ex-aao-ssl-0-svc.activemq-artemis-brokers.svc.cluster.local:61617", amqp.ConnSASLPlain("cgi", "cgi"), amqp.ConnTLSConfig(config))
         Expect(err).NotTo(HaveOccurred())
         defer client.Close()
         
