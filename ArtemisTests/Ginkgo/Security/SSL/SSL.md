@@ -13,10 +13,10 @@
 # Test cases
 |#|Test case|Desired outcome|Actual outcome|
 |---|---|---|---|
-| [case_1](case1_test.go) | Setup a producer that sends a message to a queue. The producer should have the bundle mounted. | The message is produced on the queue. ||
+| [case_1](case1_test.go) | Setup a producer that sends a message to a queue. The producer should have the bundle mounted. Check to see whether message is there and can be retrieved. | The message is produced on the queue and can be retrieved. ||
 | [case_2](case2_test.go) | Check every namespace in the cluster to see if the bundle configmap is present. | Every namespace in the cluster has the bundle. ||
-| [case_3](case3_test.go) | Setup a producer that sends a message to a queue. The producer should not have the bundle mounted. | The message is not produced inside the queue. ||
-| [case_4](case4_test.go) | Setup a producer that sends a message to a queue. The producer should have the bundle mounted. | The message is not produced inside the queue. |???|
+| [case_3](case3_test.go) | Setup a producer that sends a message to a queue. The producer should not have the bundle mounted. Check to see whether message is there and can be retrieved. | The message is not produced inside the queue and cannot be retrieved. ||
+| [case_4](case4_test.go) | Setup a producer that sends a message to a queue. The producer should have the bundle mounted. Check to see whether message is there and can be retrieved. | The message is not produced inside the queue and cannot be retrieved. |???|
 
 # Documentation review
 | # | Test case | Desired outcome |
