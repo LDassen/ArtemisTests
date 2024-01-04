@@ -14,7 +14,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
     // ... (setup and teardown code)
 
     It("should successfully connect", func() {
-        caCert, err := ioutil.ReadFile("/etc/ssl/certs/ca-bundle.crt")
+        caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem")
         Expect(err).NotTo(HaveOccurred())
 
         caCertPool := x509.NewCertPool()
@@ -24,7 +24,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
             RootCAs: caCertPool,
         }
 
-        conn, err := tls.Dial("tcp", "<ARTEMIS_HOST>:<ARTEMIS_PORT>", config)
+        conn, err := tls.Dial("tcp", "amqps://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617", config)
         Expect(err).NotTo(HaveOccurred())
         defer conn.Close()
 
