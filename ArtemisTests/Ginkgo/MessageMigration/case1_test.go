@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega"
+	"github.com/onsi/gomega" 
 	"pack.ag/amqp"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -69,7 +68,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// List pods with the label selector "application=ex-aao-app"
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
-		gomega.Expect(err).To(BeNil(), "Error getting pods: %v", err)
+		gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
 
 		// Check if there are any pods with the specified label
 		if len(pods.Items) > 0 {
@@ -78,7 +77,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 			// Delete the last pod
 			err := kubeClient.CoreV1().Pods(namespace).Delete(ctx, lastPodName, metav1.DeleteOptions{})
-			gomega.Expect(err).To(BeNil(), "Error deleting pod: %v", err)
+			gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
 
 			// Wait for the deletion to propagate
 			time.Sleep(30 * time.Second)
