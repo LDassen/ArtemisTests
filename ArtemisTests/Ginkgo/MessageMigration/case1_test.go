@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		fmt.Println("Connecting to the Artemis broker...")
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
