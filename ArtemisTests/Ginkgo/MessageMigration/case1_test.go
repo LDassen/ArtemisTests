@@ -69,12 +69,12 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	ginkgo.It("should send, delete, and check messages", func() {
 		// Use the queue name without specifying the broker
-		queueName := "NEWTestkube test-queue"
-		messageText := "NEWTestkube test-message"
+		queueName := "Testkube test-queue"
+		messageText := "Testkube test-message"
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
-		receiver, err = session.NewReceiver(
+		receiver, err := session.NewReceiver(
 			amqp.LinkSourceAddress(sourceAddress),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -90,60 +90,75 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		fmt.Printf("Message sent successfully to broker '%s'.\n", sourceAddress)
 
-		// Wait for a short duration
-		time.Sleep(1 * time.Second)
+		// Wait for the last pod deletion to complete
+		podDeleted := false
+		timeout := time.After(5 * time.Minute) // Set a reasonable timeout
+		for {
+			select {
+			case <-timeout:
+				gomega.Expect(podDeleted).To(gomega.BeTrue(), "Timeout waiting for pod deletion.")
+			default:
+				// List pods with the label selector "application=ex-aao-app"
+				pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
+				gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
 
-		// Delete the last broker
-		lastBrokerAddr := "ex-aao-ss-2"
-		err := kubeClient.CoreV1().Pods(namespace).Delete(ctx, lastBrokerAddr, metav1.DeleteOptions{})
-		gomega.Expect(err).To(gomega.BeNil(), "Error deleting last broker: %v", err)
-		fmt.Printf("Broker '%s' deleted successfully.\n", lastBrokerAddr)
+				// Check if there are any pods with the specified label
+				if len(pods.Items) == 0 {
+					podDeleted = true
+					fmt.Println("Last pod deleted successfully.")
+					break
+				}
 
-		// Wait for the deletion to propagate
-		time.Sleep(30 * time.Second)
+				time.Sleep(5 * time.Second) // Adjust the sleep duration if needed
+			}
+		}
 
-		// List pods with the label selector "application=ex-aao-app"
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
-		gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
-
-		// Flag to determine if the message is found
-		messageFound := false
+		// Create a map to store whether a message is found for each pod
+		messageFoundMap := make(map[string]bool)
 
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
-			if pod.Name != lastBrokerAddr {
-				receiver, err = session.NewReceiver(
-					amqp.LinkSourceAddress(fmt.Sprintf("%s.%s", pod.Name, queueName)),
-				)
+			// Create a receiver for each remaining pod
+			receiver, err = session.NewReceiver(
+				amqp.LinkSourceAddress(sourceAddress),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
+
+			// Receive messages from the queue
+			msg, err := receiver.Receive(ctx)
+			if err != nil {
+				fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				fmt.Printf("Receiver created for broker '%s'.\n", pod.Name)
-
-				// Receive messages from the queue
-				msg, err := receiver.Receive(ctx)
-				if err != nil {
-					fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
-					gomega.Expect(err).NotTo(gomega.HaveOccurred())
-					// Close the receiver if there was an error
-					receiver.Close(ctx)
-					fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-					continue
-				}
-
-				fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
-
-				// Check if the received message matches the specific message
-				if string(msg.GetData()) == messageText {
-					// Accept the message
-					msg.Accept()
-					fmt.Printf("Message found in pod '%s'.\n", pod.Name)
-					// Set the flag to true
-					messageFound = true
-					break // Exit the loop if the message is found
-				}
-
-				// Close the receiver
+				// Close the receiver if there was an error
 				receiver.Close(ctx)
 				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+				continue
+			}
+
+			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
+
+			// Check if the received message matches the specific message
+			if string(msg.GetData()) == messageText {
+				// Accept the message
+				msg.Accept()
+				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
+				// Set the flag to true
+				messageFoundMap[pod.Name] = true
+			}
+
+			// Close the receiver
+			receiver.Close(ctx)
+			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+		}
+
+		// Check if the message was found in any pod
+		messageFound := false
+		for podName, found := range messageFoundMap {
+			if found {
+				messageFound = true
+				fmt.Printf("Message found in pod '%s'.\n", podName)
+				break
 			}
 		}
 
