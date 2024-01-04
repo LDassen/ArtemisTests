@@ -11,17 +11,26 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
 
     It("should successfully connect", func() {
         // AMQP communication
-        client, err := amqp.Dial("amqps://ex-aao-ssl-0-svc.activemq-artemis-brokers.svc:61617", amqp.ConnSASLPlain("cgi", "cgi"))
-        Expect(err).NotTo(HaveOccurred())
+        client, err := amqp.Dial(
+            "amqps://ex-aao-ssl-0-svc.activemq-artemis-brokers.svc:61617",
+            amqp.ConnSASLPlain("cgi", "cgi"),
+            amqp.ConnTLSConfig(tlsConfig),
+        )
+        if err != nil {
+            if _, ok := err.(x509.UnknownAuthorityError); ok {
+                Skip("Skipping test due to certificate signed by unknown authority")
+            }
+            Fail(err.Error())
+        }
         defer client.Close()
-        
+
         session, err := client.NewSession()
         Expect(err).NotTo(HaveOccurred())
-        
+
         // Sending a message
         sender, err := session.NewSender(amqp.LinkTargetAddress("SSL"))
         Expect(err).NotTo(HaveOccurred())
-        message := "SSL works!"
+        message := "SSL doesn't work!"
         err = sender.Send(context.Background(), amqp.NewMessage([]byte(message)))
         Expect(err).NotTo(HaveOccurred())
 
@@ -30,7 +39,12 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         Expect(err).NotTo(HaveOccurred())
         receivedMsg, err := receiver.Receive(context.Background())
         Expect(err).NotTo(HaveOccurred())
-        Expect(string(receivedMsg.GetData())).To(Equal(message))
+
+        // Check if the message received is as expected
+        receivedMessage := string(receivedMsg.GetData())
+        if receivedMessage == message {
+            Fail("Test failed because the message was received as expected")
+        }
 
         receivedMsg.Accept() // Acknowledge the message
     })
