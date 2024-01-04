@@ -4,15 +4,31 @@ metadata:
   name: custom-ginkgo-executor
   namespace: testkube
 spec:
-  executor_type: job  # or 'container' depending on your use case
-  image: kubeshop/testkube-ginkgo-executor:1.16.20  # The Docker image for the executor
-  command: ["ginkgo"]  # The command the executor should run
-  args: ["-vv"]  # Any arguments for the command
+  args:
+  - -vv
+  command:
+  - ginkgo
+  content_types:
+  - string
+  - file-uri
+  - git-file
+  - git-dir
+  - git
+  executor_type: job
+  features:
+  - artifacts
+  - junit-report
+  image: kubeshop/testkube-ginkgo-executor:1.16.20
+  meta:
+    docsURI: https://kubeshop.github.io/testkube/test-types/executor-ginkgo
+    iconURI: ginkgo
+  types:
+  - ginkgo/test
   job_template: |
     apiVersion: batch/v1
     kind: Job
     metadata:
-      name: {{ .JobName }}
+      name: ssljob
     spec:
       template:
         spec:
@@ -28,6 +44,3 @@ spec:
           - name: ssl
             configMap:
               name: ca-bundle
-          restartPolicy: Never
-  types:
-    - ginkgo/test
