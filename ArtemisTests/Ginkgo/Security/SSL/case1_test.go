@@ -3,6 +3,7 @@ package SSL_test
 import (
     "io/ioutil"
     "testing"
+    "time"
     "fmt"
 
     . "github.com/onsi/ginkgo/v2"
@@ -25,4 +26,5 @@ var _ = Describe("Artemis SSL Connection", func() {
             }
         })
     })
+    time.Sleep(3 * time.Minute)
 })
