@@ -104,6 +104,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			fmt.Println("No pods found with label 'application=ex-aao-app'")
 		}
 
+		// Flag to determine if the message is found
+		messageFound := false
+
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			receiver, err = session.NewReceiver(
@@ -117,21 +120,35 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			if err != nil {
 				fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				// Close the receiver if there was an error
+				receiver.Close(ctx)
+				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
 				continue
 			}
+
 			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
 
 			// Check if the received message matches the specific message
-			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
-
-			// Accept the message
-			msg.Accept()
-			fmt.Printf("Message accepted from pod '%s'.\n", pod.Name)
+			if string(msg.GetData()) == messageText {
+				// Accept the message
+				msg.Accept()
+				fmt.Printf("Message foud in pod '%s'.\n", pod.Name)
+				// Set the flag to true
+				messageFound = true
+			}
 
 			// Close the receiver
 			receiver.Close(ctx)
 			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+
+			// Break out of the loop after finding the message in one pod
+			if messageFound {
+				break
+			}
 		}
+
+		// Check if the message was found in any pod
+		gomega.Expect(messageFound).To(gomega.BeTrue(), "Message not found in any pod.")
 	})
 
 	ginkgo.AfterEach(func() {
