@@ -4,10 +4,11 @@ import (
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     "pack.ag/amqp"
+    "context"
+    "crypto/tls"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
-    var config *tls.Config
 
     It("should successfully connect", func() {
         // AMQP communication
