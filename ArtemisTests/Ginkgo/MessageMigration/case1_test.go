@@ -72,7 +72,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	ginkgo.It("should send, delete, and check messages", func() {
 		queueName := "SpecificQueue"
 		messageText := "Hello, this is a test message"
-
+	
 		// Create a sender and send a message to the specific queue in ex-aao-ss-2 broker
 		sender, err = session.NewSender(
 			amqp.LinkTargetAddress(queueName),
@@ -80,30 +80,31 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
+	
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
-
+	
+		// Create a receiver for the specific queue
+		receiver, err := session.NewReceiver(
+			amqp.LinkSourceAddress(queueName),
+		)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
-			receiver, err = session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
+	
 			// Check if the received message matches the specific message
 			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
-
+	
 			// Accept the message
 			msg.Accept()
-
-			// Close the receiver
-			receiver.Close(ctx)
 		}
+	
+		// Close the receiver after the loop
+		receiver.Close(ctx)
 	})
 
 	ginkgo.AfterEach(func() {
