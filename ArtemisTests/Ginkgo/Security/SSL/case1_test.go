@@ -4,9 +4,6 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-    "net"
-    "testing"
-
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     "pack.ag/amqp" 
