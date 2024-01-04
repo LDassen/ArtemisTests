@@ -93,25 +93,18 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
 
+		// Delete the last broker
+		lastBrokerAddr := "ex-aao-ss-2"
+		err := kubeClient.CoreV1().Pods(namespace).Delete(ctx, lastBrokerAddr, metav1.DeleteOptions{})
+		gomega.Expect(err).To(gomega.BeNil(), "Error deleting last broker: %v", err)
+		fmt.Printf("Broker '%s' deleted successfully.\n", lastBrokerAddr)
+
+		// Wait for the deletion to propagate
+		time.Sleep(30 * time.Second)
+
 		// List pods with the label selector "application=ex-aao-app"
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
 		gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
-
-		// Check if there are any pods with the specified label
-		if len(pods.Items) > 0 {
-			// Get the name of the last pod in the list
-			lastPodName := pods.Items[len(pods.Items)-1].Name
-
-			// Delete the last pod
-			err := kubeClient.CoreV1().Pods(namespace).Delete(ctx, lastPodName, metav1.DeleteOptions{})
-			gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
-			fmt.Printf("Pod '%s' deleted successfully.\n", lastPodName)
-
-			// Wait for the deletion to propagate
-			time.Sleep(30 * time.Second)
-		} else {
-			fmt.Println("No pods found with label 'application=ex-aao-app'")
-		}
 
 		// Flag to determine if the message is found
 		messageFound := false
