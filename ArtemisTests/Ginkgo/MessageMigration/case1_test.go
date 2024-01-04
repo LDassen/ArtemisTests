@@ -70,7 +70,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	ginkgo.It("should send, delete, and check messages", func() {
 		// Use the queue name without specifying the broker
 		queueName := "Testkube test-queue"
-		messageText := "Testkube test-message"
+		messageText := "specialtext"
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
