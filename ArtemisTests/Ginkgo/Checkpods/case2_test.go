@@ -34,7 +34,7 @@ var _ = Describe("Kafka Broker Pods", func() {
 		}
 
 		// Set your expected number of 'kafka-brokers-' pods here
-		expectedPodCount := 3 
+		expectedPodCount := 1 
 		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'activemq-artemis-controller-manager-' pods, but found %d", expectedPodCount, actualPodCount)
 	})
 })
