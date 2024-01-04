@@ -68,17 +68,27 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
+		// Use the queue name without specifying the broker
 		queueName := "Testkube test-queue"
 		messageText := "Testkube test-message"
 
-		// Create a sender and send a message to the specific queue in the active broker
+		// Specify the broker as a prefix in the source address when creating the sender
+		sourceAddress := "ex-aao-ss-2." + queueName
+		receiver, err := session.NewReceiver(
+			amqp.LinkSourceAddress(sourceAddress),
+		)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
+
+		// Create a sender and send a message to the specific queue on ex-aao-ss-2
 		sender, err = session.NewSender(
 			amqp.LinkTargetAddress(queueName),
+			amqp.LinkSourceAddress(sourceAddress),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		fmt.Println("Message sent successfully.")
+		fmt.Printf("Message sent successfully to broker '%s'.\n", sourceAddress)
 
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
@@ -109,10 +119,10 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			receiver, err = session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
+				amqp.LinkSourceAddress(sourceAddress),
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			fmt.Printf("Receiver created for pod '%s'.\n", pod.Name)
+			fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
 
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
@@ -131,7 +141,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			if string(msg.GetData()) == messageText {
 				// Accept the message
 				msg.Accept()
-				fmt.Printf("Message foud in pod '%s'.\n", pod.Name)
+				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
 				// Set the flag to true
 				messageFound = true
 			}
@@ -144,7 +154,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			if messageFound {
 				break
 			}
-			fmt.Printf("Message Migration passed")
 		}
 
 		// Check if the message was found in any pod
