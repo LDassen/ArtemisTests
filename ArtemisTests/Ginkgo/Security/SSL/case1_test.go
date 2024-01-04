@@ -1,38 +1,41 @@
 package SSL_test
 
 import (
-    "crypto/tls"
-    "crypto/x509"
-    "io/ioutil"
-    "testing"
-
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
+    // ... (other imports)
+    "pack.ag/amqp"
 )
 
-func TestArtemisSSL(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "ArtemisSSL Suite")
-}
+var _ = Describe("Artemis SSL and AMQP Test", func() {
+    // ... (setup and teardown code)
 
-var _ = Describe("Artemis SSL Connection", func() {
-    Context("When connecting to Artemis with SSL", func() {
-        It("should successfully connect", func() {
-            caCert, err := ioutil.ReadFile("/etc/ssl/certs/ca-bundle.crt")
-            Expect(err).NotTo(HaveOccurred())
+    It("should successfully connect with SSL and communicate over AMQP", func() {
+        // Check SSL configuration
+        caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem")
+        Expect(err).NotTo(HaveOccurred())
+        // ... (rest of TLS setup and validation)
 
-            caCertPool := x509.NewCertPool()
-            caCertPool.AppendCertsFromPEM(caCert)
+        // AMQP communication
+        client, err := amqp.Dial("amqps://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617", amqp.ConnTLSConfig(config))
+        Expect(err).NotTo(HaveOccurred())
+        defer client.Close()
+        
+        session, err := client.NewSession()
+        Expect(err).NotTo(HaveOccurred())
+        
+        // Sending a message
+        sender, err := session.NewSender(amqp.LinkTargetAddress("SSL"))
+        Expect(err).NotTo(HaveOccurred())
+        message := "SSL works!"
+        err = sender.Send(context.Background(), amqp.NewMessage([]byte(message)))
+        Expect(err).NotTo(HaveOccurred())
 
-            config := &tls.Config{
-                RootCAs: caCertPool,
-            }
+        // Receiving a message
+        receiver, err := session.NewReceiver(amqp.LinkSourceAddress("SSL"))
+        Expect(err).NotTo(HaveOccurred())
+        receivedMsg, err := receiver.Receive(context.Background())
+        Expect(err).NotTo(HaveOccurred())
+        Expect(string(receivedMsg.GetData())).To(Equal(message))
 
-            conn, err := tls.Dial("tcp", "<ARTEMIS_HOST>:<ARTEMIS_PORT>", config)
-            Expect(err).NotTo(HaveOccurred())
-            defer conn.Close()
-
-            // Perform further checks if needed
-        })
+        receivedMsg.Accept() // Acknowledge the message
     })
 })
