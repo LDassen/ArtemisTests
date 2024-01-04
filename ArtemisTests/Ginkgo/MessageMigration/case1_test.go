@@ -17,6 +17,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	var client *amqp.Client
 	var session *amqp.Session
 	var sender *amqp.Sender
+	var receiver *amqp.Receiver
 	var ctx context.Context
 	var err error
 
@@ -64,7 +65,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		fmt.Println("Message sent successfully.")
 
 		// Wait for a short duration
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 
 		// List pods with the label selector "application=ex-aao-app"
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
@@ -88,29 +89,31 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
-			go func(podName string) {
-				// Recover from panics in the goroutine
-				defer ginkgo.GinkgoRecover()
+			receiver, err = session.NewReceiver(
+				amqp.LinkSourceAddress(queueName),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			fmt.Printf("Receiver created for pod '%s'.\n", podName)
 
-				receiver, err := session.NewReceiver(
-					amqp.LinkSourceAddress(queueName),
-				)
+			// Receive messages from the queue
+			msg, err := receiver.Receive(ctx)
+			if err != nil {
+				fmt.Printf("Error receiving message from pod '%s': %v\n", podName, err)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				fmt.Printf("Receiver created for pod '%s'.\n", podName)
-				defer receiver.Close(ctx)
+				continue
+			}
+			fmt.Printf("Received message from pod '%s': %s\n", podName, string(msg.GetData()))
 
-				// Receive messages from the queue
-				msg, err := receiver.Receive(ctx)
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				fmt.Printf("Received message from pod '%s': %s\n", podName, string(msg.GetData()))
+			// Check if the received message matches the specific message
+			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
 
-				// Check if the received message matches the specific message
-				gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+			// Accept the message
+			msg.Accept()
+			fmt.Printf("Message accepted from pod '%s'.\n", podName)
 
-				// Accept the message
-				msg.Accept()
-				fmt.Printf("Message accepted from pod '%s'.\n", podName)
-			}(podName)
+			// Close the receiver
+			receiver.Close(ctx)
+			fmt.Printf("Receiver closed for pod '%s'.\n", podName)
 		}
 	})
 
