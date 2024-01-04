@@ -5,7 +5,6 @@ import (
     . "github.com/onsi/gomega"
     "pack.ag/amqp"
     "context"
-    "crypto/x509"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
