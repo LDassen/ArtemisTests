@@ -5,7 +5,6 @@ import (
     . "github.com/onsi/gomega"
     "pack.ag/amqp"
     "context"
-    "crypto/tls"
     "crypto/x509"
 )
 
@@ -16,7 +15,6 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         client, err := amqp.Dial(
             "amqps://ex-aao-ssl-0-svc.activemq-artemis-brokers.svc:61617",
             amqp.ConnSASLPlain("cgi", "cgi"),
-            amqp.ConnTLSConfig(tlsConfig),
         )
         if err != nil {
             if _, ok := err.(x509.UnknownAuthorityError); ok {
