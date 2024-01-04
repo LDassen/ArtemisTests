@@ -21,11 +21,6 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         // Create a CA certificate pool and add cert to it
         caCertPool := x509.NewCertPool()
         caCertPool.AppendCertsFromPEM(caCert)
-
-        // Create a TLS configuration
-        config = &tls.Config{
-            RootCAs: caCertPool,
-            // Add other necessary TLS configurations here
         }
     })
 
@@ -41,7 +36,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
         // Sending a message
         sender, err := session.NewSender(amqp.LinkTargetAddress("SSL"))
         Expect(err).NotTo(HaveOccurred())
-        message := "SSL works!"
+        message := "SSL doesn't work!"
         err = sender.Send(context.Background(), amqp.NewMessage([]byte(message)))
         Expect(err).NotTo(HaveOccurred())
 
