@@ -4,22 +4,29 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-    "net"
-    "testing"
-
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     "pack.ag/amqp" 
+    "context"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
     // ... (setup and teardown code)
 
-    It("should successfully connect with SSL and communicate over AMQP", func() {
-        // Check SSL configuration
+    It("should successfully connect", func() {
         caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem")
         Expect(err).NotTo(HaveOccurred())
-        // ... (rest of TLS setup and validation)
+
+        caCertPool := x509.NewCertPool()
+        caCertPool.AppendCertsFromPEM(caCert)
+
+        config := &tls.Config{
+            RootCAs: caCertPool,
+        }
+
+        conn, err := tls.Dial("tcp", "ex-aao-hdls-svc.activemq-artemis-brokers:61617", config)
+        Expect(err).NotTo(HaveOccurred())
+        defer conn.Close()
 
         // AMQP communication
         client, err := amqp.Dial("amqps://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617", amqp.ConnTLSConfig(config))
