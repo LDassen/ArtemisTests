@@ -74,7 +74,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
-		receiver, err := session.NewReceiver(
+		receiver, err = session.NewReceiver(
 			amqp.LinkSourceAddress(sourceAddress),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
