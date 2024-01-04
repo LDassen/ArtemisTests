@@ -27,19 +27,36 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
 
-		// Establish connection to the Artemis broker
-		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
-			amqp.ConnSASLPlain("cgi", "cgi"),
-			amqp.ConnIdleTimeout(30*time.Second),
-		)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		fmt.Println("Connected successfully.")
+		// List of broker addresses
+		brokerAddresses := []string{
+			"ex-aao-ss-0.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			"ex-aao-ss-1.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			"ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			// Add more addresses if needed
+		}
+
+		// Try connecting to each broker until a successful connection is established
+		for _, brokerAddr := range brokerAddresses {
+			client, err = amqp.Dial(
+				fmt.Sprintf("amqp://%s", brokerAddr),
+				amqp.ConnSASLPlain("cgi", "cgi"),
+				amqp.ConnIdleTimeout(30*time.Second),
+			)
+			if err == nil {
+				fmt.Printf("Connected successfully to %s.\n", brokerAddr)
+				break
+			} else {
+				fmt.Printf("Error connecting to %s: %v\n", brokerAddr, err)
+			}
+		}
+
+		// Check if a connection was successfully established
+		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to establish a connection to any broker.")
+		fmt.Println("Session created successfully.")
 
 		// Create a session
 		session, err = client.NewSession()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		fmt.Println("Session created successfully.")
 
 		// Initialize Kubernetes client with in-cluster config
 		config, err := clientcmd.BuildConfigFromFlags("", "")
@@ -55,7 +72,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		queueName := "SpecificQueue"
 		messageText := "Hello, this is a test message"
 
-		// Create a sender and send a message to the specific queue in ex-aao-ss-2 broker
+		// Create a sender and send a message to the specific queue in the active broker
 		sender, err = session.NewSender(
 			amqp.LinkTargetAddress(queueName),
 		)
@@ -87,38 +104,33 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			fmt.Println("No pods found with label 'application=ex-aao-app'")
 		}
 
-		// Create a new session after deleting the pod
-		session, err = client.NewSession()
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		fmt.Println("New session created successfully after deleting the pod.")
-
-		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
-		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		// Loop through all pods with the label to find the specific message
+		for _, pod := range pods.Items {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			fmt.Printf("Receiver created for pod '%s'.\n", podName)
+			fmt.Printf("Receiver created for pod '%s'.\n", pod.Name)
 
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
 			if err != nil {
-				fmt.Printf("Error receiving message from pod '%s': %v\n", podName, err)
+				fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				continue
 			}
-			fmt.Printf("Received message from pod '%s': %s\n", podName, string(msg.GetData()))
+			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
 
 			// Check if the received message matches the specific message
 			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
 
 			// Accept the message
 			msg.Accept()
-			fmt.Printf("Message accepted from pod '%s'.\n", podName)
+			fmt.Printf("Message accepted from pod '%s'.\n", pod.Name)
 
 			// Close the receiver
 			receiver.Close(ctx)
-			fmt.Printf("Receiver closed for pod '%s'.\n", podName)
+			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
 		}
 	})
 
