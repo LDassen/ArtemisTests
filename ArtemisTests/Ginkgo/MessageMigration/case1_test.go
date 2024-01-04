@@ -32,7 +32,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			"ex-aao-ss-0.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			"ex-aao-ss-1.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			"ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
-			// Add more addresses if needed
 		}
 
 		// Try connecting to each broker until a successful connection is established
@@ -69,8 +68,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "SpecificQueue"
-		messageText := "Hello, this is a test message"
+		queueName := "Testkube test-queue"
+		messageText := "Testkube test-message"
 
 		// Create a sender and send a message to the specific queue in the active broker
 		sender, err = session.NewSender(
@@ -145,6 +144,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			if messageFound {
 				break
 			}
+			fmt.Printf("Message Migration passed")
 		}
 
 		// Check if the message was found in any pod
