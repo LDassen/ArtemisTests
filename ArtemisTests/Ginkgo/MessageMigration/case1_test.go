@@ -92,7 +92,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(30 * time.Second)
 
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
-		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
