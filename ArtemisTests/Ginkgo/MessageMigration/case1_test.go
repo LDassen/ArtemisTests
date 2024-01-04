@@ -65,7 +65,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		fmt.Println("Message sent successfully.")
 
 		// Wait for a short duration
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second) // Adjust the waiting time as needed
 
 		// List pods with the label selector "application=ex-aao-app"
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
@@ -83,13 +83,43 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 			// Wait for the deletion to propagate
 			time.Sleep(30 * time.Second)
+
+			// Retry connecting to AMQP after deleting the pod
+			retryAttempts := 3
+			for attempt := 1; attempt <= retryAttempts; attempt++ {
+				// Attempt to connect to AMQP
+				client, err = amqp.Dial(
+					"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+					amqp.ConnSASLPlain("cgi", "cgi"),
+					amqp.ConnIdleTimeout(30*time.Second),
+				)
+
+				// Check if the connection was successful
+				if err == nil {
+					fmt.Println("Connected successfully after retry.")
+					break
+				}
+
+				// If not successful, wait for some time before retrying
+				fmt.Printf("Failed to connect (attempt %d/%d), waiting before retry...\n", attempt, retryAttempts)
+				time.Sleep(10 * time.Second)
+			}
+
+			// Check if the connection was successful after retrying
+			if err != nil {
+				gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error during connection after retry: %v", err)
+			}
+
+			// Create a new session
+			session, err = client.NewSession()
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			fmt.Println("Session created successfully after retry.")
 		} else {
 			fmt.Println("No pods found with label 'application=ex-aao-app'")
 		}
 
-		// Loop through the found pods to find the specific message
-		for _, pod := range pods.Items {
-			podName := pod.Name
+		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
+		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
