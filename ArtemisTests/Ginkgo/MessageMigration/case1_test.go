@@ -62,6 +62,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		fmt.Println("Message sent successfully.")
 
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
@@ -78,6 +79,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			// Delete the last pod
 			err := kubeClient.CoreV1().Pods(namespace).Delete(ctx, lastPodName, metav1.DeleteOptions{})
 			gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
+			fmt.Printf("Pod '%s' deleted successfully.\n", lastPodName)
 
 			// Wait for the deletion to propagate
 			time.Sleep(30 * time.Second)
@@ -86,24 +88,28 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		}
 
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
-		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			fmt.Printf("Receiver created for pod '%s'.\n", podName)
 
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			fmt.Printf("Received message from pod '%s': %s\n", podName, string(msg.GetData()))
 
 			// Check if the received message matches the specific message
 			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
 
 			// Accept the message
 			msg.Accept()
+			fmt.Printf("Message accepted from pod '%s'.\n", podName)
 
 			// Close the receiver
 			receiver.Close(ctx)
+			fmt.Printf("Receiver closed for pod '%s'.\n", podName)
 		}
 	})
 
