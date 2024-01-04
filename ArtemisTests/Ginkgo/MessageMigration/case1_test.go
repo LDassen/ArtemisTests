@@ -106,7 +106,10 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
 		gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
 
-		// Create receivers for other pods first
+		// Flag to determine if the message is found
+		messageFound := false
+
+		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			if pod.Name != lastBrokerAddr {
 				receiver, err = session.NewReceiver(
@@ -114,47 +117,37 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				fmt.Printf("Receiver created for broker '%s'.\n", pod.Name)
-			}
-		}
 
-		// Flag to determine if the message is found
-		messageFound := false
+				// Receive messages from the queue
+				msg, err := receiver.Receive(ctx)
+				if err != nil {
+					fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
+					gomega.Expect(err).NotTo(gomega.HaveOccurred())
+					// Close the receiver if there was an error
+					receiver.Close(ctx)
+					fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+					continue
+				}
 
-		// Loop through all pods with the label to find the specific message
-		for _, pod := range pods.Items {
-			if pod.Name == lastBrokerAddr {
-				continue
-			}
+				fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
 
-			// Receive messages from the queue
-			msg, err := receiver.Receive(ctx)
-			if err != nil {
-				fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				// Close the receiver if there was an error
+				// Check if the received message matches the specific message
+				if string(msg.GetData()) == messageText {
+					// Accept the message
+					msg.Accept()
+					fmt.Printf("Message found in pod '%s'.\n", pod.Name)
+					// Set the flag to true
+					messageFound = true
+				}
+
+				// Close the receiver
 				receiver.Close(ctx)
 				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-				continue
-			}
 
-			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
-
-			// Check if the received message matches the specific message
-			if string(msg.GetData()) == messageText {
-				// Accept the message
-				msg.Accept()
-				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
-				// Set the flag to true
-				messageFound = true
-			}
-
-			// Close the receiver
-			receiver.Close(ctx)
-			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-
-			// Break out of the loop after finding the message in one pod
-			if messageFound {
-				break
+				// Break out of the loop after finding the message in one pod
+				if messageFound {
+					break
+				}
 			}
 		}
 
