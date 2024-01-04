@@ -26,5 +26,5 @@ var _ = Describe("Artemis SSL Connection", func() {
             }
         })
     })
-    time.Sleep(1 * time.Minute)
+    time.Sleep(3 * time.Minute)
 })
