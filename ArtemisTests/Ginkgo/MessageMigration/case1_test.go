@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
-	"github.com/onsi/gomega" 
+	"github.com/onsi/gomega"
 	"pack.ag/amqp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -87,8 +87,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			fmt.Println("No pods found with label 'application=ex-aao-app'")
 		}
 
-		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
-		for _, podName := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		// Loop through the found pods to find the specific message
+		for _, pod := range pods.Items {
+			podName := pod.Name
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
