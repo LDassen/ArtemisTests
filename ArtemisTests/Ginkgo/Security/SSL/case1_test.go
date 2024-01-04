@@ -7,6 +7,7 @@ import (
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     "pack.ag/amqp" 
+    "context"
 )
 
 var _ = Describe("Artemis SSL and AMQP Test", func() {
