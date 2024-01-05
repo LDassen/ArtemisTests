@@ -10,7 +10,7 @@ import (
 
 var _ = Describe("Kafka SSL Connection", func() {
 	Context("when sending and receiving messages over SSL", func() {
-		It("should not successfully produce and consume messages on TESTKUBE topic", func() {
+		It("should pass if messages cannot be sent or received on TESTKUBE topic", func() {
 
 			broker := "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094"
 			config := sarama.NewConfig()
@@ -29,30 +29,14 @@ var _ = Describe("Kafka SSL Connection", func() {
 				Topic: "TESTKUBE",
 				Value: sarama.StringEncoder(message),
 			})
-			Expect(err).To(HaveOccurred())
+			if err == nil {
+				Fail("Message should not be sent successfully")
+			}
 
 			// Consuming the message
 			consumer, err := sarama.NewConsumer([]string{broker}, config)
-			Expect(err).To(HaveOccurred())
-			defer func() {
-				if err := consumer.Close(); err != nil {
-					log.Println("Error closing consumer:", err)
-				}
-			}()
-
-			partitionConsumer, err := consumer.ConsumePartition("TESTKUBE", partition, offset)
-			Expect(err).To(HaveOccurred())
-			defer func() {
-				if err := partitionConsumer.Close(); err != nil {
-					log.Println("Error closing partition consumer:", err)
-				}
-			}()
-
-			select {
-			case msg := <-partitionConsumer.Messages():
-				Expect(string(msg.Value)).To(Equal(message))
-			case <-time.After(5 * time.Second):
-				Fail("Timed out waiting for message")
+			if err == nil {
+				Fail("Consumer should not be created successfully")
 			}
 		})
 	})
