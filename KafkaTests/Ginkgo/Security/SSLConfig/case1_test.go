@@ -17,7 +17,7 @@ var _ = Describe("Kafka SSL Test", func() {
 
     BeforeEach(func() {
         // Load the CA certificate
-        time.Sleep(2 * time.Minute)
+        // time.Sleep(2 * time.Minute)
         caCert, err := ioutil.ReadFile("/var/kafka/ca.crt")
         Expect(err).NotTo(HaveOccurred())
 
