@@ -7,6 +7,7 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
+	"time"
 )
 
 var _ = Describe("Kafka SSL Test", func() {
@@ -16,6 +17,7 @@ var _ = Describe("Kafka SSL Test", func() {
 
     BeforeEach(func() {
         // Load the CA certificate
+        time.Sleep(2 * time.Minute)
         caCert, err := ioutil.ReadFile("/etc/ssl/certs/kafka-bundle.pem")
         Expect(err).NotTo(HaveOccurred())
 
