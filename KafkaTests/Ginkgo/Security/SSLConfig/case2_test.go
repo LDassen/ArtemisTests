@@ -2,9 +2,11 @@ package SSLConfig_test
 
 import (
 	"context"
-	"time"
+
+	certmanager "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	cmmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -12,12 +14,17 @@ import (
 
 var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 	var clientset *kubernetes.Clientset
+	var certManagerClientset *certmanager.Clientset
 
 	ginkgo.BeforeEach(func() {
 		// Set up the Kubernetes client
 		config, err := rest.InClusterConfig()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		clientset, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Set up the cert-manager client
+		certManagerClientset, err = certmanager.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
@@ -31,10 +38,12 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 			}
 
 			for _, certName := range certNames {
-				// Assuming the use of cert-manager, change this according to your certificate API
-				cert, err := clientset.CertificatesV1().Certificates(namespace).Get(context.TODO(), certName, metav1.GetOptions{})
+				cert, err := certManagerClientset.CertmanagerV1().Certificates(namespace).Get(context.TODO(), certName, metav1.GetOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(cert.Status.Conditions).To(gomega.ContainElement( /* check for Ready status condition */ ))
+				gomega.Expect(cert.Status.Conditions).To(gomega.ContainElement(cmmetav1.Condition{
+					Type:   cmmetav1.CertificateConditionReady,
+					Status: cmmetav1.ConditionTrue,
+				}))
 			}
 		})
 
