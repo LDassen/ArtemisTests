@@ -1,6 +1,7 @@
 package SSL_test
 
 import (
+	"log"
 	"time"
 	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
