@@ -7,7 +7,7 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-	"time"
+	// "time"
 )
 
 var _ = Describe("Kafka SSL Test", func() {
