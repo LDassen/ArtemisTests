@@ -43,11 +43,11 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 				// Check if certificate is ready
 				ready := false
 				for _, condition := range cert.Status.Conditions {
-					if condition.Type == certmanagerv1.CertificateConditionReady && condition.Status == certmanagerv1.ConditionTrue {
+					if condition.Type == certmanagerv1.CertificateConditionReady && condition.Status == "True" {
 						ready = true
 						break
 					}
-				}
+				}				
 				gomega.Expect(ready).To(gomega.BeTrue())
 			}
 		})
