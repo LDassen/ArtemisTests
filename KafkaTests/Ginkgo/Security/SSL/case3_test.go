@@ -2,7 +2,6 @@ package SSL_test
 
 import (
 	"log"
-	"time"
 	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,7 +24,7 @@ var _ = Describe("Kafka SSL Connection", func() {
 			}()
 
 			message := "Hello, TestKube!"
-			partition, offset, err := producer.SendMessage(&sarama.ProducerMessage{
+			_, _, err = producer.SendMessage(&sarama.ProducerMessage{
 				Topic: "TESTKUBE",
 				Value: sarama.StringEncoder(message),
 			})
@@ -34,7 +33,7 @@ var _ = Describe("Kafka SSL Connection", func() {
 			}
 
 			// Consuming the message
-			consumer, err := sarama.NewConsumer([]string{broker}, config)
+			_, err = sarama.NewConsumer([]string{broker}, config)
 			if err == nil {
 				Fail("Consumer should not be created successfully")
 			}
