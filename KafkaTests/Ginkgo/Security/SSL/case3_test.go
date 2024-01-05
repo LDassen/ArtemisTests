@@ -2,7 +2,6 @@ package SSL_test
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
