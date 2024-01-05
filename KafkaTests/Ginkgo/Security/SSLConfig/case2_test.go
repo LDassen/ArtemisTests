@@ -2,8 +2,9 @@ package SSLConfig_test
 
 import (
 	"context"
-	certmanager "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+    certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+    certmanagerclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
+    cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
