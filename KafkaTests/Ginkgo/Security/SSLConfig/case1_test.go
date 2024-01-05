@@ -3,7 +3,7 @@ package SSLConfig_test
 import (
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
-    "github.com/Shopify/sarama"
+    "github.com/IBM/sarama"
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
