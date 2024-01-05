@@ -3,7 +3,7 @@ package SSLConfig_test
 import (
 	"context"
 
-	certmanager "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
+	certmanager "github.com/cert-manager/cert-manager"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	cmmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
