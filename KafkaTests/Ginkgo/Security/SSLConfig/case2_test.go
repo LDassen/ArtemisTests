@@ -2,9 +2,8 @@ package SSLConfig_test
 
 import (
 	"context"
-    certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-    certmanagerclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
-    cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	certmanagerclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +13,7 @@ import (
 
 var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 	var clientset *kubernetes.Clientset
-	var certManagerClientset *certmanager.Clientset
+	var certManagerClientset *certmanagerclient.Clientset
 
 	ginkgo.BeforeEach(func() {
 		// Set up the Kubernetes client
@@ -24,7 +23,7 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Set up the cert-manager client
-		certManagerClientset, err = certmanager.NewForConfig(config)
+		certManagerClientset, err = certmanagerclient.NewForConfig(config)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	})
 
@@ -40,9 +39,9 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 			for _, certName := range certNames {
 				cert, err := certManagerClientset.CertmanagerV1().Certificates(namespace).Get(context.TODO(), certName, metav1.GetOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(cert.Status.Conditions).To(gomega.ContainElement(cmmetav1.Condition{
-					Type:   cmmetav1.CertificateConditionReady,
-					Status: cmmetav1.ConditionTrue,
+				gomega.Expect(cert.Status.Conditions).To(gomega.ContainElement(certmanagerv1.Condition{
+					Type:   certmanagerv1.CertificateConditionReady,
+					Status: certmanagerv1.ConditionTrue,
 				}))
 			}
 		})
