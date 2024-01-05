@@ -9,10 +9,13 @@ import (
 
 var _ = Describe("Kafka SSL Connection", func() {
 	Context("when sending and receiving messages over SSL", func() {
-		It("should pass if messages cannot be sent or received on TESTKUBE topic", func() {
+		It("should succeed if messages cannot be sent or received on TESTKUBE topic", func() {
 
 			broker := "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094"
 			config := sarama.NewConfig()
+
+			// Set Producer.Return.Successes to false
+			config.Producer.Return.Successes = false
 
 			// Producing a message
 			producer, err := sarama.NewSyncProducer([]string{broker}, config)
@@ -28,15 +31,11 @@ var _ = Describe("Kafka SSL Connection", func() {
 				Topic: "TESTKUBE",
 				Value: sarama.StringEncoder(message),
 			})
-			if err == nil {
-				Fail("Message should not be sent successfully")
-			}
+			Expect(err).To(HaveOccurred())
 
 			// Consuming the message
 			_, err = sarama.NewConsumer([]string{broker}, config)
-			if err == nil {
-				Fail("Consumer should not be created successfully")
-			}
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
