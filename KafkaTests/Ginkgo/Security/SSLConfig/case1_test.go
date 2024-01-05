@@ -5,6 +5,7 @@ import (
     . "github.com/onsi/gomega"
     "github.com/IBM/sarama"
     "crypto/tls"
+    "crypto/x509"
     "io/ioutil"
 	// "time"
 )
