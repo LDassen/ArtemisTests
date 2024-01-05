@@ -18,15 +18,17 @@ var _ = Describe("Kafka SSL Test", func() {
     BeforeEach(func() {
         // Load the CA certificate
         // time.Sleep(2 * time.Minute)
-        caCert, err := ioutil.ReadFile("/var/kafka/ca.crt")
-        Expect(err).NotTo(HaveOccurred())
-
-        caCertPool := x509.NewCertPool()
-        caCertPool.AppendCertsFromPEM(caCert)
-
-        tlsConfig = &tls.Config{
-            RootCAs: caCertPool,
-        }
+		caCert, err := ioutil.ReadFile("/var/kafka/ca.crt") // CA certificate
+		Expect(err).NotTo(HaveOccurred())
+		
+		clientCert, err := tls.LoadX509KeyPair("/var/kafka/tls.crt", "/var/kafka/tls.key") // Client certificate and key
+		Expect(err).NotTo(HaveOccurred())
+		
+		tlsConfig = &tls.Config{
+			RootCAs:      caCertPool,
+			Certificates: []tls.Certificate{clientCert},
+			// Potentially other configurations
+		}
 
         // Set to the DNS name of your headless service and port
         headless = "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094" // Replace with your headless service
