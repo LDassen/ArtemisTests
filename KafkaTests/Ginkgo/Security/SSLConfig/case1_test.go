@@ -51,8 +51,6 @@ var _ = Describe("Kafka SSL Test", func() {
     })
 })
 
-)
-
 var _ = Describe("Kafka SSL Test", func() {
     var headless string
     var topic string
