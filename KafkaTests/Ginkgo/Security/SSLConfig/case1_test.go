@@ -1,4 +1,4 @@
-package kafka_test
+package SSLConfig_test
 
 import (
 	"crypto/tls"
