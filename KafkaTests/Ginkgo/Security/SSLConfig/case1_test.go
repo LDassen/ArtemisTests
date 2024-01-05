@@ -5,34 +5,36 @@ import (
     . "github.com/onsi/gomega"
     "github.com/IBM/sarama"
     "crypto/tls"
-    "crypto/x509"
     "io/ioutil"
 	// "time"
 )
 
 var _ = Describe("Kafka SSL Test", func() {
-    var headless string      // Single headless address
-    var topic string       // Kafka topic
+    var headless string
+    var topic string
     var tlsConfig *tls.Config
 
     BeforeEach(func() {
         // Load the CA certificate
-        // time.Sleep(2 * time.Minute)
-		caCert, err := ioutil.ReadFile("/var/kafka/ca.crt") // CA certificate
-		Expect(err).NotTo(HaveOccurred())
-		
-		clientCert, err := tls.LoadX509KeyPair("/var/kafka/tls.crt", "/var/kafka/tls.key") // Client certificate and key
-		Expect(err).NotTo(HaveOccurred())
-		
-		tlsConfig = &tls.Config{
-			RootCAs:      caCertPool,
-			Certificates: []tls.Certificate{clientCert},
-			// Potentially other configurations
-		}
+        caCertBytes, err := ioutil.ReadFile("/var/kafka/ca.crt") // CA certificate
+        Expect(err).NotTo(HaveOccurred())
 
-        // Set to the DNS name of your headless service and port
-        headless = "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094" // Replace with your headless service
-        topic = "TESTKUBE"                   // Replace with your Kafka topic
+        // Create a CA certificate pool
+        caCertPool := x509.NewCertPool()
+        caCertPool.AppendCertsFromPEM(caCertBytes)
+
+        // Load the client certificate and key
+        clientCert, err := tls.LoadX509KeyPair("/var/kafka/tls.crt", "/var/kafka/tls.key")
+        Expect(err).NotTo(HaveOccurred())
+
+        // Create TLS configuration
+        tlsConfig = &tls.Config{
+            RootCAs:      caCertPool,
+            Certificates: []tls.Certificate{clientCert},
+        }
+
+        headless = "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094"
+        topic = "TESTKUBE"
     })
 
     It("should successfully produce and consume messages with Kafka over SSL", func() {
