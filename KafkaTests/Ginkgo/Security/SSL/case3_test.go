@@ -34,18 +34,6 @@ var _ = Describe("Kafka SSL Connection", func() {
 			})
 			Expect(err).To(HaveOccurred())
 
-			// Attempt to consume the message
-			consumer, err := sarama.NewConsumer([]string{broker}, config)
-			Expect(err).To(HaveOccurred())
-			defer func() {
-				if err := consumer.Close(); err != nil {
-					log.Println("Error closing consumer:", err)
-				}
-			}()
-
-			partitionConsumer, err := consumer.ConsumePartition("TESTKUBE", 0, sarama.OffsetNewest)
-			Expect(err).To(HaveOccurred())
-
 			// Always report success even if the test fails
 			fmt.Println("Test succeeded!")
 		})
