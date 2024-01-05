@@ -1,1 +1,1 @@
-package SSLConfig
+package <folder_name>
