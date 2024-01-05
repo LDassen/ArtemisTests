@@ -1,4 +1,4 @@
-package SSLConfig_test
+package SSL_test
 
 import (
 	"log"
