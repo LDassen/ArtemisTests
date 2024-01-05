@@ -34,7 +34,7 @@ var _ = Describe("Kafka SSL Test", func() {
             Certificates: []tls.Certificate{clientCert},
         }
 
-        headless = "kafka-brokers-headless.kafka-brokers:9094"
+        headless = "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094"
         topic = "TESTKUBE"
     })
 
