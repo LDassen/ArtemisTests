@@ -13,9 +13,10 @@ var _ = Describe("Kafka SSL Connection", func() {
 		It("should not successfully produce and consume messages on TESTKUBE topic", func() {
 
 			broker := "kafka-brokers-headless.kafka-brokers.svc.cluster.local:9094"
+			config := sarama.NewConfig()
 
 			// Producing a message
-			producer, err := sarama.NewSyncProducer([]string{broker})
+			producer, err := sarama.NewSyncProducer([]string{broker}, config)
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
 				if err := producer.Close(); err != nil {
@@ -31,7 +32,7 @@ var _ = Describe("Kafka SSL Connection", func() {
 			Expect(err).To(HaveOccurred())
 
 			// Consuming the message
-			consumer, err := sarama.NewConsumer([]string{broker})
+			consumer, err := sarama.NewConsumer([]string{broker}, config)
 			Expect(err).To(HaveOccurred())
 			defer func() {
 				if err := consumer.Close(); err != nil {
