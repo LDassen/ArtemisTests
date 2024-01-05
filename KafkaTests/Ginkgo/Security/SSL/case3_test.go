@@ -1,10 +1,6 @@
-package SSLConfig_test
+package SSL_test
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
-	"log"
 	"time"
 	"github.com/IBM/sarama"
 	. "github.com/onsi/ginkgo/v2"
