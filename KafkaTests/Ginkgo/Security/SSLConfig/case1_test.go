@@ -14,11 +14,11 @@ var _ = Describe("Kafka SSL Connection", func() {
 	Context("when connecting to Kafka over SSL", func() {
 		It("should establish a secure connection successfully", func() {
 			certPool := x509.NewCertPool()
-			caCert, err := ioutil.ReadFile("/path/to/ca.crt")
+			caCert, err := ioutil.ReadFile("/var/kafka/ca.crt")
 			Expect(err).NotTo(HaveOccurred())
 			certPool.AppendCertsFromPEM(caCert)
 
-			cert, err := tls.LoadX509KeyPair("/path/to/tls.crt", "/path/to/tls.key")
+			cert, err := tls.LoadX509KeyPair("/var/kafka/tls.crt", "/var/kafka/tls.key")
 			Expect(err).NotTo(HaveOccurred())
 
 			config := sarama.NewConfig()
