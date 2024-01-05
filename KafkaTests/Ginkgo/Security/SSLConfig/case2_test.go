@@ -39,10 +39,16 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 			for _, certName := range certNames {
 				cert, err := certManagerClientset.CertmanagerV1().Certificates(namespace).Get(context.TODO(), certName, metav1.GetOptions{})
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(cert.Status.Conditions).To(gomega.ContainElement(certmanagerv1.Condition{
-					Type:   certmanagerv1.CertificateConditionReady,
-					Status: certmanagerv1.ConditionTrue,
-				}))
+
+				// Check if certificate is ready
+				ready := false
+				for _, condition := range cert.Status.Conditions {
+					if condition.Type == certmanagerv1.CertificateConditionReady && condition.Status == certmanagerv1.ConditionTrue {
+						ready = true
+						break
+					}
+				}
+				gomega.Expect(ready).To(gomega.BeTrue())
 			}
 		})
 
