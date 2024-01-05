@@ -38,7 +38,7 @@ var _ = Describe("Kafka SSL Test", func() {
         config.Producer.Return.Successes = true
 
         // Create a new Sarama producer
-        producer, err := sarama.NewSyncProducer([]string{broker}, config)
+        producer, err := sarama.NewSyncProducer([]string{headless}, config)
         Expect(err).NotTo(HaveOccurred())
         defer producer.Close()
 
@@ -50,7 +50,7 @@ var _ = Describe("Kafka SSL Test", func() {
         Expect(err).NotTo(HaveOccurred())
 
         // Create a new Sarama consumer
-        consumer, err := sarama.NewConsumer([]string{broker}, config)
+        consumer, err := sarama.NewConsumer([]string{headless}, config)
         Expect(err).NotTo(HaveOccurred())
         defer consumer.Close()
 
