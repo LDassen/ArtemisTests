@@ -30,10 +30,15 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 	ginkgo.Context("in kafka-brokers namespace", func() {
 		namespace := "kafka-brokers"
 
-		ginkgo.It("should have two ready certificates", func() {
+		ginkgo.It("should have two ready certificates and specific secrets", func() {
 			certNames := []string{
 				"kafka-brokers-controller.kafka-brokers.mgt.cluster.local",
 				"kafka-brokers-headless.kafka-brokers.svc.cluster.local",
+			}
+
+			secretNames := []string{
+				"kafka-brokers-controller",
+				"kafka-brokers-server-certificate",
 			}
 
 			for _, certName := range certNames {
@@ -47,15 +52,8 @@ var _ = ginkgo.Describe("Kafka Certificates and Secrets", func() {
 						ready = true
 						break
 					}
-				}				
+				}
 				gomega.Expect(ready).To(gomega.BeTrue())
-			}
-		})
-
-		ginkgo.It("should have specific secrets", func() {
-			secretNames := []string{
-				"kafka-brokers-controller",
-				"kafka-brokers-server-certificate",
 			}
 
 			for _, secretName := range secretNames {
