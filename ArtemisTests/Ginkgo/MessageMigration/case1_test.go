@@ -115,6 +115,18 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			}
 		}
 
+		// Wait for a few seconds before deleting the pod associated with ex-aao-2
+		time.Sleep(5 * time.Second)
+
+		// Delete the pod associated with ex-aao-2
+		deletePodName := "ex-aao-2"                        // Replace with the actual pod name
+		deletePodNamespace := "activemq-artemis-brokers"   // Replace with the actual namespace
+		deletePropagationPolicy := metav1.DeletePropagationForeground
+		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
+		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
+		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
+		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
+
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			// Create a receiver for each remaining pod
