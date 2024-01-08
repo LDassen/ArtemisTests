@@ -21,5 +21,5 @@
 
 # Documentation Review
 | # | Test case | Desired outcome |
-| --- | --- | --- | 
-| # | Review documentation in ADO WIKI. | Confirm that the documentation accurately reflects the behavior of automatic queue deletion, including any configurable parameters and troubleshooting steps. | 
+| --- | --- | --- |
+| # | Review documentation in ADO WIKI. | Confirm that the documentation accurately reflects the behavior of automatic queue deletion, including any configurable parameters and troubleshooting steps. |
