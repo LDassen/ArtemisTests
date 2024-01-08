@@ -154,9 +154,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// If the loop completes without finding the message, fail the test
 		ginkgo.Fail("Message not found in any pod.")
 		}
-	
-		// If the loop completes without finding the message, fail the test
-		ginkgo.Fail("Message not found in any pod.")
 	})
 
 	ginkgo.AfterEach(func() {
