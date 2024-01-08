@@ -56,16 +56,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		statefulSetName := "ex-aao-ss"
 		_, err = kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Create receivers for each broker
-		receivers = make(map[string]*amqp.Receiver)
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
-			receiver, err := session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			receivers[broker] = receiver
-		}
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
@@ -95,6 +85,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Loop to receive messages from brokers
 		for {
+			// Move the declaration and assignment of `queueName` here
+			queueName := "doei"
+
 			for broker, receiver := range receivers {
 				// Skip the deleted broker
 				if broker == receivedBroker {
@@ -104,7 +97,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				// Receive messages from the queue
 				msg, err := receiver.Receive(ctx)
 				if err == context.DeadlineExceeded {
-					// If timeout is reached, continue to the next broker
+					// If the timeout is reached, continue to the next broker
 					fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
 					continue
 				} else if err != nil {
@@ -182,7 +175,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 				msg, err := receiver.Receive(ctx)
 				if err == context.DeadlineExceeded {
-					// If timeout is reached, continue to the next broker
+					// If the timeout is reached, continue to the next broker
 					fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
 					receiver.Close(ctx)
 					continue
