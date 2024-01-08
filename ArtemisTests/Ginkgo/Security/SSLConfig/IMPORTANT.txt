@@ -1,1 +1,1 @@
-Please use the following line in the CLI to create this test: kubectl testkube create test --git-uri https://github.com/LDassen/TestkubeTests.git --git-path ArtemisTests/Ginkgo/Security/SSL --type ginkgo/test --name ssl --git-branch main --mount-configmap ca-bundle=/etc/ssl/certs
+Please use the following line in the CLI to create this test: kubectl testkube create test --git-uri https://github.com/LDassen/TestkubeTests.git --git-path ArtemisTests/Ginkgo/Security/SSLConfig --type ginkgo/test --name ssl --git-branch main --mount-configmap ca-bundle=/etc/ssl/certs

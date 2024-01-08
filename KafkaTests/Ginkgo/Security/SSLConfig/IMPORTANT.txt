@@ -1,0 +1,1 @@
+Please use the following line in the CLI to create this test: kubectl testkube create test --git-uri https://github.com/LDassen/TestkubeTests.git --git-path KafkaTests/Ginkgo/Security/SSLConfig --type ginkgo/test --name sslconfigkafka --git-branch main --mount-secret app-producer-secret=/var/kafka
