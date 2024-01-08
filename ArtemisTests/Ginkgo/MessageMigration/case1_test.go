@@ -59,7 +59,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "stop"
+		queueName := "stoppp"
 		messageText := "nee"
 
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
