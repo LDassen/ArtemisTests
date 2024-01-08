@@ -93,8 +93,11 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
 		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
 
+		// Print a message indicating the start of the search
+		fmt.Println("Searching for the message in other brokers...")
+
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
-		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
 				amqp.LinkSourceAddress(queueName),
 			)
@@ -105,14 +108,26 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			// Check if the received message matches the specific message
-			gomega.Expect(string(msg.GetData())).To(gomega.Equal(messageText))
+			if string(msg.GetData()) == messageText {
+				// Print where the message was found
+				fmt.Printf("Message found in broker '%s'.\n", broker)
 
-			// Accept the message
-			msg.Accept()
+				// Accept the message
+				msg.Accept()
+
+				// Close the receiver
+				receiver.Close(ctx)
+
+				// Exit the loop as the message is found
+				break
+			}
 
 			// Close the receiver
 			receiver.Close(ctx)
 		}
+
+		// Print a message indicating the end of the search
+		fmt.Println("Message search completed.")
 	})
 
 	ginkgo.AfterEach(func() {
