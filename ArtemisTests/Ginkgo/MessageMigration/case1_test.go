@@ -149,7 +149,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			// Close the receiver
 			receiver.Close(ctx)
 			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-		}
+		//}
 	
 		// If the loop completes without finding the message, fail the test
 		ginkgo.Fail("Message not found in any pod.")
