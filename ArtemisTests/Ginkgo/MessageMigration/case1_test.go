@@ -59,8 +59,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zoz3"
-		messageText := "zozmessage3"
+		queueName := "zoz4"
+		messageText := "zozmessage4"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -81,6 +81,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Step 3: Determine which broker received the message
 		var receivedBroker string
 		messageFound := false
+		var cancel context.CancelFunc // Declare cancel variable
 		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
 			// Check if the message is present in the current broker
 			receiver, err := session.NewReceiver(
@@ -171,7 +172,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		} else {
 			fmt.Println("Message search completed. Message not found.")
 		}
-	})
+	})	
 
 	ginkgo.AfterEach(func() {
 		if sender != nil {
