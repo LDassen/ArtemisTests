@@ -141,9 +141,16 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deleteQueueManagementCommand.ApplicationProperties = map[string]interface{}{
 			"operation": "manage",
 		}
-		_, err = session.AMQPSender().Send(ctx, deleteQueueManagementCommand)
+
+		managementSender, err := session.NewSender(
+			amqp.LinkTargetAddress("activemq.management"),
+		)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		_, err = managementSender.Send(ctx, deleteQueueManagementCommand)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		fmt.Printf("Queue '%s' deleted successfully.\n", queueName)
+		managementSender.Close(ctx)
 	})
 
 	ginkgo.AfterEach(func() {
