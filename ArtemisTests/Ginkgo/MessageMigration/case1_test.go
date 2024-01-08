@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Establish connection to the Artemis broker
 		fmt.Println("Connecting to the Artemis broker...")
 		client, err = amqp.Dial(
-			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617",
+			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
@@ -59,83 +59,83 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zharry"
-		messageText := "zharryy"
-	
+		queueName := "stop"
+		messageText := "nee"
+
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
 			amqp.LinkTargetAddress(queueName),
 			amqp.LinkSourceAddress(queueName),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-		// Set the exact broker for sending the message
-		brokerToSend := "ex-aao-ss-0"
-	
+
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-		// Print a message indicating that the message has been sent to the specific broker
-		fmt.Printf("Message sent to broker '%s'.\n", brokerToSend)
-	
+
+		// Print a message indicating that the message has been sent to the headless connection
+		fmt.Printf("Message sent to headless connection.\n")
+
 		// Step 2: Wait for a short duration
-		time.Sleep(50 * time.Second)
-	
-		// Step 3: Delete the specific broker that initially received the message
-		deletePodName := brokerToSend
+		time.Sleep(60 * time.Second)
+
+		// Step 3: Determine the broker that received the message
+		receivedBroker := "ex-aao-ss-2"  // Replace with the actual broker name based on your configuration
+		fmt.Printf("Message received by broker '%s'.\n", receivedBroker)
+
+		// Step 4: Delete the broker that received the message
+		deletePodName := receivedBroker
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
 		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
 		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
 		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
-	
-		// Step 4: Print a message indicating the start of the search
+
+		// Step 5: Print a message indicating the start of the search
 		fmt.Println("Searching for the message in other brokers...")
-		time.Sleep(50 * time.Second)
-	
-		// Step 5: Re-determine which broker currently has the message
-		receiver, err = session.NewReceiver(
-			amqp.LinkSourceAddress(queueName),
-		)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-		// Iterate through brokers and check for the message
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
-			msg, err := receiver.Receive(ctx)
-			if err == context.DeadlineExceeded {
-				// If timeout is reached, consider the message not found
-				fmt.Println("Timeout exceeded while searching for the message.")
-				break
-			} else if err != nil {
-				// Handle other errors
-				fmt.Printf("Error receiving message: %v\n", err)
-				break
+		time.Sleep(120 * time.Second)
+
+		// Step 6: Check in the remaining brokers where the message is found
+		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
+			// Skip the deleted broker
+			if broker == receivedBroker {
+				continue
 			}
-	
+
+			receiver, err = session.NewReceiver(
+				amqp.LinkSourceAddress(queueName),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			// Receive messages from the queue
+			msg, err := receiver.Receive(ctx)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 			// Check if the received message matches the specific message
 			if string(msg.GetData()) == messageText {
 				// Print where the message was found
 				fmt.Printf("Message found in broker '%s'.\n", broker)
-	
+
 				// Accept the message
 				msg.Accept()
-	
+
+				// Close the receiver
+				receiver.Close(ctx)
+
 				// Exit the loop as the message is found
 				break
 			}
-	
+
 			// Close the receiver
 			receiver.Close(ctx)
 		}
-	
-		// Close the receiver after finishing the loop
-		if receiver != nil {
-			receiver.Close(ctx)
-		}
+
+		// Step 7: Print a message indicating the end of the search
+		fmt.Println("Message search completed.")
 	})
 
 	ginkgo.AfterEach(func() {
+		// Close resources in reverse order of creation
 		if sender != nil {
 			sender.Close(ctx)
 		}
