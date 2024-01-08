@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	v1 "k8s.io/api/core/v1" // Add this import
+	v1 "k8s.io/api/core/v1"
 )
 
 var _ = ginkgo.Describe("MessageMigration Test", func() {
@@ -24,7 +24,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	var kubeClient *kubernetes.Clientset
 	var namespace string
-	var pods *v1.PodList // Use v1.PodList here
+	var pods *v1.PodList // Declare pods outside the loop
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
@@ -94,14 +94,14 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Wait for the last pod deletion to complete
 		podDeleted := false
-		timeout := time.After(5 * time.Minute) // Set a reasonable timeout
+		timeout := time.After(5 * time.Minute) 
 		for {
 			select {
 			case <-timeout:
 				gomega.Expect(podDeleted).To(gomega.BeTrue(), "Timeout waiting for pod deletion.")
 			default:
 				// List pods with the label selector "application=ex-aao-app"
-				pods, err = kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
+				pods, err := kubeClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "application=ex-aao-app"})
 				gomega.Expect(err).To(gomega.BeNil(), "Error getting pods: %v", err)
 
 				// Check if there are any pods with the specified label
@@ -109,6 +109,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 					podDeleted = true
 					fmt.Println("Last pod deleted successfully.")
 					break
+				} else {
+					fmt.Printf("Pods still present: %v\n", pods.Items)
 				}
 
 				time.Sleep(5 * time.Second) // Adjust the sleep duration if needed
