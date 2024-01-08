@@ -147,4 +147,5 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			client.Close()
 		}
 	})
+})
 	
