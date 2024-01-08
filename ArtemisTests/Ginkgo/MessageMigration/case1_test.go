@@ -59,7 +59,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zzzzz"
+		queueName := "zzzz"
 		messageText := "zzzz"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
@@ -153,7 +153,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			// Check if the received message matches the specific message
 			if string(msg.GetData()) == messageText {
 				// Print where the message was found
-				fmt.Printf("Message found in broker '%s'.\n", receivedBroker)
+				fmt.Printf("Message found in broker '%s'.\n", deletePodName)
 	
 				// Accept the message
 				msg.Accept()
@@ -172,7 +172,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		} else {
 			fmt.Println("Message search completed. Message not found.")
 		}
-	})	
+	})
 
 	ginkgo.AfterEach(func() {
 		if sender != nil {
