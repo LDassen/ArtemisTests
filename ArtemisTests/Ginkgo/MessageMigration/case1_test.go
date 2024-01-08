@@ -1,6 +1,3 @@
-User
-because this was my code, im not sure it did send the message, or deleted that certain pod, and then check the other pods based on the code:
-
 package MessageMigration_test
 
 import (
