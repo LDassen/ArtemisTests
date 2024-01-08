@@ -94,7 +94,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
-		err = kubeClient.CoreV1().Pods().Delete(ctx, deletePodName, *deleteOptions)
+		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
 		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
 		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
 
@@ -141,27 +141,10 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			sender.Close(ctx)
 		}
 		if session != nil {
-			// Delete the queue
-			deleteQueueManagementCommand := amqp.NewMessage([]byte(
-				"DELETE QUEUE '" + queueName + "'",
-			))
-			managementSender, err := session.NewSender(
-				amqp.LinkTargetAddress("activemq.management"),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-			// Send the delete queue command
-			err = managementSender.Send(ctx, deleteQueueManagementCommand)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	
-			// Close the management sender
-			managementSender.Close(ctx)
-	
-			// Close the session
 			session.Close(ctx)
 		}
 		if client != nil {
 			client.Close()
 		}
 	})
-})
+	
