@@ -48,7 +48,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Try connecting to each broker until a successful connection is established
 		for _, brokerAddr := range brokerAddresses {
-			client, err = amqp.Dial(
+			client, err := amqp.Dial(
 				fmt.Sprintf("amqp://%s", brokerAddr),
 				amqp.ConnSASLPlain("cgi", "cgi"),
 				amqp.ConnIdleTimeout(30*time.Second),
@@ -62,11 +62,11 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		}
 
 		// Check if a connection was successfully established
-		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to establish a connection to any broker.")
+		gomega.Expect(client).NotTo(gomega.BeNil(), "Failed to establish a connection to any broker.")
 		fmt.Println("Session created successfully.")
 
 		// Create a session
-		session, err = client.NewSession()
+		session, err := client.NewSession()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 		// Use the queue name without specifying the broker
@@ -74,14 +74,14 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
-		receiver, err = session.NewReceiver(
+		receiver, err := session.NewReceiver(
 			amqp.LinkSourceAddress(sourceAddress),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
 
 		// Create a sender and send a message to the specific queue on ex-aao-ss-2
-		sender, err = session.NewSender(
+		sender, err := session.NewSender(
 			amqp.LinkTargetAddress(queueName),
 			amqp.LinkSourceAddress(sourceAddress),
 		)
@@ -123,14 +123,13 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
-		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
-		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
+		gomega.Expect(kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)).To(gomega.BeNil(), "Error deleting pod.")
 		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
 
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			// Create a receiver for each remaining pod
-			receiver, err = session.NewReceiver(
+			receiver, err := session.NewReceiver(
 				amqp.LinkSourceAddress(sourceAddress),
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -172,16 +171,13 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	ginkgo.AfterEach(func() {
 		if sender != nil {
-			err := sender.Close(ctx)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(sender.Close(ctx)).To(gomega.BeNil(), "Error closing sender.")
 		}
 		if session != nil {
-			err := session.Close(ctx)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(session.Close(ctx)).To(gomega.BeNil(), "Error closing session.")
 		}
 		if client != nil {
-			err := client.Close()
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(client.Close()).To(gomega.BeNil(), "Error closing client.")
 		}
 	})
 })
