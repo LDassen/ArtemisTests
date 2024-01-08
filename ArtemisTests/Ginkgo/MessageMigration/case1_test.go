@@ -59,8 +59,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "stoppp"
-		messageText := "stoppp"
+		queueName := "hoi"
+		messageText := "hoi"
 
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -81,16 +81,30 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Step 3: Determine which broker received the message
 		var receivedBroker string
 		messageFound := false
+
+		// Create the receiver outside the loop
+		receiver, err := session.NewReceiver(
+			amqp.LinkSourceAddress(queueName),
+		)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
 		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
-			// Check if the message is present in the current broker
-			receiver, err := session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			// Skip the deleted broker
+			if broker == receivedBroker {
+				continue
+			}
 
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			if err == context.DeadlineExceeded {
+				// If timeout is reached, continue to the next broker
+				fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
+				continue
+			} else if err != nil {
+				// Handle other errors
+				fmt.Printf("Error receiving message in broker '%s': %v\n", broker, err)
+				continue
+			}
 
 			// Check if the received message matches the specific message
 			if string(msg.GetData()) == messageText {
@@ -106,15 +120,16 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				// Set the flag to true
 				messageFound = true
 
-				// Close the receiver
-				receiver.Close(ctx)
-
 				// Exit the loop as the message is found
 				break
 			}
 
-			// Close the receiver
-			receiver.Close(ctx)
+			// Accept the message
+			msg.Accept()
+		}
+
+		// Close the receiver after finishing the loop
+		receiver.Close(ctx)
 		}
 
 		// Step 4: Delete the broker that received the message
