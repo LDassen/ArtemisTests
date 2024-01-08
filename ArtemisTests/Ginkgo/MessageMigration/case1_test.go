@@ -124,7 +124,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Step 5: Print a message indicating the start of the search
 		fmt.Println("Searching for the message in other brokers...")
-		time.Sleep(120 * time.Second)
+		time.Sleep(60 * time.Second)
 
 		// Step 6: Check in the remaining brokers where the message is found
 		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
