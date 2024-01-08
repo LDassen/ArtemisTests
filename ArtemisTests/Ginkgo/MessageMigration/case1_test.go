@@ -119,7 +119,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(5 * time.Second)
 
 		// Delete the pod associated with ex-aao-2
-		deletePodName := "ex-aao-2"
+		deletePodName := "ex-aao-ss-2"
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
