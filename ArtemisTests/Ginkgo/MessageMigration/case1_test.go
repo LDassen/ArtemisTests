@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"pack.ag/amqp"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
