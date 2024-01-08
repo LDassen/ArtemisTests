@@ -94,7 +94,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
-		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
+		err = kubeClient.CoreV1().Pods().Delete(ctx, deletePodName, *deleteOptions)
 		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
 		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
 
@@ -164,4 +164,4 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			client.Close()
 		}
 	})
-	
+})
