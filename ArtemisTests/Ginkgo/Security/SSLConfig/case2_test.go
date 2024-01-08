@@ -21,15 +21,20 @@ var _ = Describe("ConfigMap Check in All Namespaces", func() {
         Expect(err).NotTo(HaveOccurred())
     })
 
-    It("should have 'ca-bundle' ConfigMap in all namespaces", func() {
+    It("should have 'ca-bundle' ConfigMap with 'SYNCED=true' in all namespaces", func() {
         // Get all namespaces
         namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
         Expect(err).NotTo(HaveOccurred())
 
         for _, namespace := range namespaces.Items {
-            // Check for the presence of 'ca-bundle' ConfigMap in each namespace
-            _, err := clientset.CoreV1().ConfigMaps(namespace.Name).Get(context.TODO(), "ca-bundle", metav1.GetOptions{})
+            // Retrieve the 'ca-bundle' ConfigMap in each namespace
+            cm, err := clientset.CoreV1().ConfigMaps(namespace.Name).Get(context.TODO(), "ca-bundle", metav1.GetOptions{})
             Expect(err).NotTo(HaveOccurred(), "Namespace: "+namespace.Name)
+
+            // Check if the 'SYNCED' status is 'true' in the ConfigMap annotations or data
+            synced, exists := cm.Annotations["SYNCED"] // or use cm.Data based on where SYNCED is stored
+            Expect(exists).To(BeTrue(), "SYNCED annotation missing in ca-bundle ConfigMap in Namespace: "+namespace.Name)
+            Expect(synced).To(Equal("true"), "SYNCED is not true in ca-bundle ConfigMap in Namespace: "+namespace.Name)
         }
     })
 })
