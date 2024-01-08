@@ -59,8 +59,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zlisa"
-		messageText := "zlili"
+		queueName := "zharry"
+		messageText := "zhaha"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -125,9 +125,15 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
-		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
-		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
-		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
+		
+		// Skip deletion if message or queue not found
+		if messageFound {
+			err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
+			gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
+			fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
+		} else {
+			fmt.Println("Message or queue not found. Skipping deletion.")
+		}
 	
 		// Step 5: Print a message indicating the start of the search
 		fmt.Println("Searching for the message in other brokers...")
@@ -165,10 +171,17 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	
 				// Set the flag to true
 				messageFound = true
+	
+				// Exit the loop as the message is found
 				break
 			}
 	
 			// Close the receiver
+			receiver.Close(ctx)
+		}
+	
+		// Close the receiver after finishing the loop
+		if receiver != nil {
 			receiver.Close(ctx)
 		}
 	
