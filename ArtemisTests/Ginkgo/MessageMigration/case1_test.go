@@ -24,7 +24,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	var kubeClient *kubernetes.Clientset
 	var namespace string
-	var pods *v1.PodList // Declare pods outside the loop
+	var pods *v1.PodList 
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
@@ -94,7 +94,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Wait for the last pod deletion to complete
 		podDeleted := false
-		timeout := time.After(5 * time.Minute) 
+		timeout := time.After(2 * time.Minute) 
 		for {
 			select {
 			case <-timeout:
@@ -113,7 +113,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 					fmt.Printf("Pods still present: %v\n", pods.Items)
 				}
 
-				time.Sleep(5 * time.Second) // Adjust the sleep duration if needed
+				time.Sleep(15 * time.Second)
 			}
 		}
 
@@ -128,7 +128,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
-
+	
 			// Receive messages from the queue
 			msg, err := receiver.Receive(ctx)
 			if err != nil {
@@ -139,35 +139,29 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
 				continue
 			}
-
+	
 			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
-
+	
 			// Check if the received message matches the specific message
 			if string(msg.GetData()) == messageText {
 				// Accept the message
 				msg.Accept()
 				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
 				// Set the flag to true
-				messageFoundMap[pod.Name] = true
+				messageFound := true
+	
+				// Check if the message was found in any pod
+				gomega.Expect(messageFound).To(gomega.BeTrue(), "Message not found in any pod.")
+				return // Break out of the loop after finding the message in one pod
 			}
-
+	
 			// Close the receiver
 			receiver.Close(ctx)
 			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
 		}
-
-		// Check if the message was found in any pod
-		messageFound := false
-		for podName, found := range messageFoundMap {
-			if found {
-				messageFound = true
-				fmt.Printf("Message found in pod '%s'.\n", podName)
-				break
-			}
-		}
-
-		// Check if the message was found in any pod
-		gomega.Expect(messageFound).To(gomega.BeTrue(), "Message not found in any pod.")
+	
+		// If the loop completes without finding the message, fail the test
+		gomega.Fail("Message not found in any pod.")
 	})
 
 	ginkgo.AfterEach(func() {
