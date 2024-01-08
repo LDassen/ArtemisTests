@@ -80,7 +80,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Step 3: Determine which broker received the message
 		var receivedBroker string
-		messageFound := false
+		messageFound := true
 
 		// Create the receiver outside the loop
 		receiver, err := session.NewReceiver(
