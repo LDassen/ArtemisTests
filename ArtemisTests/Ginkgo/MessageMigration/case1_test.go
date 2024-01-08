@@ -85,8 +85,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Loop to receive messages from brokers
 		for {
-			// Move the declaration and assignment of `queueName` here
-			queueName := "x"
 
 			for broker, receiver := range receivers {
 				// Skip the deleted broker
