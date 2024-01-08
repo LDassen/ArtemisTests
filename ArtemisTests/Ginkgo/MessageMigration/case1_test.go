@@ -130,7 +130,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Close the receiver after finishing the loop
 		receiver.Close(ctx)
-		}
 
 		// Step 4: Delete the broker that received the message
 		deletePodName := receivedBroker
