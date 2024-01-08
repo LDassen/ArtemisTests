@@ -119,8 +119,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(5 * time.Second)
 
 		// Delete the pod associated with ex-aao-2
-		deletePodName := "ex-aao-2"                        // Replace with the actual pod name
-		deletePodNamespace := "activemq-artemis-brokers"   // Replace with the actual namespace
+		deletePodName := "ex-aao-2"                        
+		deletePodNamespace := "activemq-artemis-brokers"  
 		deletePropagationPolicy := metav1.DeletePropagationForeground
 		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
 		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
