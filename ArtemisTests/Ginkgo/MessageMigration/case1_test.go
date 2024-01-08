@@ -70,8 +70,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "SpecificQueue"
-		messageText := "Hello, this is a test message"
+		queueName := "ja"
+		messageText := "ja"
 
 		// Create a sender and send a message to the specific queue in ex-aao-ss-2 broker
 		sender, err = session.NewSender(
@@ -141,10 +141,50 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			sender.Close(ctx)
 		}
 		if session != nil {
+			// Delete the queue
+			deleteQueueManagementCommand := amqp.NewMessage([]byte(
+				"DELETE QUEUE '" + queueName + "'",
+			))
+			managementSender, err := session.NewSender(
+				amqp.LinkTargetAddress("activemq.management"),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
+			// Send the delete queue command
+			err = managementSender.Send(ctx, deleteQueueManagementCommand)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
+			// Create a receiver to receive the response
+			managementReceiver, err := session.NewReceiver(
+				amqp.LinkSourceAddress(managementSender.Target().Address),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
+			// Receive the response
+			response, err := managementReceiver.Receive(ctx)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	
+			// Check if the response indicates success
+			if response.ApplicationProperties["statusCode"] != 200 {
+				// Print an error message if the deletion fails
+				fmt.Printf("Error deleting the queue. StatusCode: %v, StatusDescription: %v\n",
+					response.ApplicationProperties["statusCode"],
+					response.ApplicationProperties["statusDescription"],
+				)
+			} else {
+				// Print a success message if the deletion succeeds
+				fmt.Println("Queue deleted successfully.")
+			}
+	
+			// Close the management sender and receiver
+			managementSender.Close(ctx)
+			managementReceiver.Close(ctx)
+	
+			// Close the session
 			session.Close(ctx)
 		}
 		if client != nil {
 			client.Close()
 		}
 	})
-})
+	
