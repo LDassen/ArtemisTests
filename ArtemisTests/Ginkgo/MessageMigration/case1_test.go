@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	v1 "k8s.io/api/core/v1"
 )
 
 var _ = ginkgo.Describe("MessageMigration Test", func() {
