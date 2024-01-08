@@ -138,19 +138,32 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		deleteQueueManagementCommand := amqp.NewMessage([]byte(
 			"DELETE QUEUE '" + queueName + "'",
 		))
-		deleteQueueManagementCommand.ApplicationProperties = map[string]interface{}{
-			"operation": "manage",
+		managementSender, err := session.Sender(amqp.LinkTargetAddress("activemq.management"))
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Send the delete queue command
+		err = managementSender.Send(ctx, deleteQueueManagementCommand)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Receive the response
+		response, err := managementSender.Receive(ctx)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Check if the response indicates success
+		if response.ApplicationProperties["statusCode"] != 200 {
+			// Print an error message if the deletion fails
+			fmt.Printf("Error deleting the queue. StatusCode: %v, StatusDescription: %v\n",
+				response.ApplicationProperties["statusCode"],
+				response.ApplicationProperties["statusDescription"],
+			)
+		} else {
+			// Print a success message if the deletion succeeds
+			fmt.Println("Queue deleted successfully.")
 		}
 
-		managementSender, err := session.NewSender(
-			amqp.LinkTargetAddress("activemq.management"),
-		)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		_, err = managementSender.Send(ctx, deleteQueueManagementCommand)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		fmt.Printf("Queue '%s' deleted successfully.\n", queueName)
+		// Close the management sender
 		managementSender.Close(ctx)
+
 	})
 
 	ginkgo.AfterEach(func() {
