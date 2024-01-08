@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		fmt.Println("Connecting to the Artemis broker...")
 		// Establish connection to the Artemis broker
 		client, err = amqp.Dial(
-			"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619", //"amqp://ex-aao-ss-2.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
@@ -83,6 +83,15 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Wait for a short duration
 		time.Sleep(1 * time.Second)
+
+		// Delete the ex-aao-ss-2 pod
+		deletePodName := "ex-aao-ss-2"
+		deletePodNamespace := "activemq-artemis-brokers"
+		deletePropagationPolicy := metav1.DeletePropagationForeground
+		deleteOptions := &metav1.DeleteOptions{PropagationPolicy: &deletePropagationPolicy}
+		err = kubeClient.CoreV1().Pods(deletePodNamespace).Delete(ctx, deletePodName, *deleteOptions)
+		gomega.Expect(err).To(gomega.BeNil(), "Error deleting pod: %v", err)
+		fmt.Printf("Pod '%s' deleted successfully.\n", deletePodName)
 
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
