@@ -17,7 +17,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	var client *amqp.Client
 	var session *amqp.Session
 	var sender *amqp.Sender
-	var receiver *amqp.Receiver
+	var receivers map[string]*amqp.Receiver
 	var ctx context.Context
 	var err error
 
@@ -56,11 +56,21 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		statefulSetName := "ex-aao-ss"
 		_, err = kubeClient.AppsV1().StatefulSets(namespace).Get(ctx, statefulSetName, metav1.GetOptions{})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Create receivers for each broker
+		receivers = make(map[string]*amqp.Receiver)
+		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
+			receiver, err := session.NewReceiver(
+				amqp.LinkSourceAddress(queueName),
+			)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			receivers[broker] = receiver
+		}
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "hoi"
-		messageText := "hoi"
+		queueName := "doei"
+		messageText := "doei"
 
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -81,56 +91,63 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Step 3: Determine which broker received the message
 		messageFound := false
 
-		// Create the receiver outside the loop
-		receiver, err := session.NewReceiver(
-			amqp.LinkSourceAddress(queueName),
-		)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		var receivedBroker string // Initialize receivedBroker to an empty string
 
-		var receivedBroker string // Move the declaration inside the loop
+		// Loop to receive messages from brokers
+		for {
+			for broker, receiver := range receivers {
+				// Skip the deleted broker
+				if broker == receivedBroker {
+					continue
+				}
 
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
-			// Skip the deleted broker
-			if broker == receivedBroker {
-				continue
-			}
+				// Receive messages from the queue
+				msg, err := receiver.Receive(ctx)
+				if err == context.DeadlineExceeded {
+					// If timeout is reached, continue to the next broker
+					fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
+					continue
+				} else if err != nil {
+					// Handle other errors
+					fmt.Printf("Error receiving message in broker '%s': %v\n", broker, err)
+					continue
+				}
 
-			// Receive messages from the queue
-			msg, err := receiver.Receive(ctx)
-			if err == context.DeadlineExceeded {
-				// If timeout is reached, continue to the next broker
-				fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
-				continue
-			} else if err != nil {
-				// Handle other errors
-				fmt.Printf("Error receiving message in broker '%s': %v\n", broker, err)
-				continue
-			}
+				// Check if the received message matches the specific message
+				if string(msg.GetData()) == messageText {
+					// Store the broker where the message was found
+					receivedBroker = broker
 
-			// Check if the received message matches the specific message
-			if string(msg.GetData()) == messageText {
-				// Store the broker where the message was found
-				receivedBroker = broker
+					// Print where the message was found
+					fmt.Printf("Message found in broker '%s'.\n", receivedBroker)
 
-				// Print where the message was found
-				fmt.Printf("Message found in broker '%s'.\n", receivedBroker)
+					// Accept the message
+					msg.Accept()
+
+					// Set the flag to true
+					messageFound = true
+
+					// Exit the loop as the message is found
+					break
+				}
 
 				// Accept the message
 				msg.Accept()
+			}
 
-				// Set the flag to true
-				messageFound = true
-
-				// Exit the loop as the message is found
+			if messageFound {
+				// Exit the outer loop if the message is found
 				break
 			}
 
-			// Accept the message
-			msg.Accept()
+			// No message found yet, wait for a short duration and try again
+			time.Sleep(10 * time.Second)
 		}
 
-		// Close the receiver after finishing the loop
-		receiver.Close(ctx)
+		// Close all receivers after finishing the loop
+		for _, receiver := range receivers {
+			receiver.Close(ctx)
+		}
 
 		// Step 4: Delete the broker that received the message
 		deletePodName := receivedBroker
@@ -146,54 +163,65 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(60 * time.Second)
 
 		// Step 6: Check in the remaining brokers where the message is found
-		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
-			// Skip the deleted broker
-			if broker == receivedBroker {
-				continue
-			}
+		messageFound = false
 
-			receiver, err = session.NewReceiver(
-				amqp.LinkSourceAddress(queueName),
-			)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		// Reset receivedBroker to an empty string
+		receivedBroker = ""
 
-			// Receive messages from the queue with a timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // Set an appropriate timeout
-			defer cancel()
+		// Loop to receive messages from brokers
+		for {
+			for broker, receiver := range receivers {
+				// Skip the deleted broker
+				if broker == receivedBroker {
+					continue
+				}
 
-			msg, err := receiver.Receive(ctx)
-			if err == context.DeadlineExceeded {
-				// If timeout is reached, continue to the next broker
-				fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
-				receiver.Close(ctx)
-				continue
-			} else if err != nil {
-				// Handle other errors
-				fmt.Printf("Error receiving message in broker '%s': %v\n", broker, err)
-				receiver.Close(ctx)
-				continue
-			}
+				// Receive messages from the queue with a timeout
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // Set an appropriate timeout
+				defer cancel()
 
-			// Check if the received message matches the specific message
-			if string(msg.GetData()) == messageText {
-				// Print where the message was found
-				fmt.Printf("Message found in broker '%s'.\n", broker)
+				msg, err := receiver.Receive(ctx)
+				if err == context.DeadlineExceeded {
+					// If timeout is reached, continue to the next broker
+					fmt.Printf("Timeout exceeded while searching in broker '%s'.\n", broker)
+					receiver.Close(ctx)
+					continue
+				} else if err != nil {
+					// Handle other errors
+					fmt.Printf("Error receiving message in broker '%s': %v\n", broker, err)
+					receiver.Close(ctx)
+					continue
+				}
 
-				// Accept the message
-				msg.Accept()
+				// Check if the received message matches the specific message
+				if string(msg.GetData()) == messageText {
+					// Print where the message was found
+					fmt.Printf("Message found in broker '%s'.\n", broker)
+
+					// Accept the message
+					msg.Accept()
+
+					// Close the receiver
+					receiver.Close(ctx)
+
+					// Set the flag to true
+					messageFound = true
+
+					// Exit the loop as the message is found
+					break
+				}
 
 				// Close the receiver
 				receiver.Close(ctx)
+			}
 
-				// Set the flag to true
-				messageFound = true
-
-				// Exit the loop as the message is found
+			if messageFound {
+				// Exit the outer loop if the message is found
 				break
 			}
 
-			// Close the receiver
-			receiver.Close(ctx)
+			// No message found yet, wait for a short duration and try again
+			time.Sleep(10 * time.Second)
 		}
 
 		// Step 7: Print a message based on the search status
@@ -209,7 +237,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		if sender != nil {
 			sender.Close(ctx)
 		}
-		if receiver != nil {
+		for _, receiver := range receivers {
 			receiver.Close(ctx)
 		}
 		if session != nil {
