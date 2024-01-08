@@ -70,12 +70,12 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "ja"
-		messageText := "ja"
+		queueName := "nee"
+		messageText := "nee"
 
 		// Create a sender and send a message to the specific queue in ex-aao-ss-2 broker
 		sender, err = session.NewSender(
-			amqp.LinkTargetAddress(queueName),
+			amqp.LinkTargetAddress("ex-aao-ss-2."+queueName),
 			amqp.LinkSourceAddress("ex-aao-ss-2."+queueName),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
