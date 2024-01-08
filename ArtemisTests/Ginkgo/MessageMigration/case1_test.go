@@ -83,10 +83,11 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	
+		// Print a message indicating that the message has been sent to ex-aao-ss-2
+		fmt.Printf("Message sent to ex-aao-ss-2.\n")
+	
 		// Wait for a short duration
-		fmt.Printf("Message sent")
 		time.Sleep(60 * time.Second)
-
 	
 		// Delete the ex-aao-ss-2 pod
 		deletePodName := "ex-aao-ss-2"
@@ -133,7 +134,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Print a message indicating the end of the search
 		fmt.Println("Message search completed.")
 	})
-
+	
 	ginkgo.AfterEach(func() {
 		if sender != nil {
 			sender.Close(ctx)
