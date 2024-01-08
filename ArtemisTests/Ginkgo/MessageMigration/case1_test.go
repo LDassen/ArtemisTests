@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		// Establish connection to the Artemis broker
 		fmt.Println("Connecting to the Artemis broker...")
 		client, err = amqp.Dial(
-			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
+			"amqp://ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61617",
 			amqp.ConnSASLPlain("cgi", "cgi"),
 			amqp.ConnIdleTimeout(30*time.Second),
 		)
@@ -59,20 +59,18 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zzzz"
-		messageText := "zzzz"
+		queueName := "zharry"
+		messageText := "zharryy"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
 			amqp.LinkTargetAddress(queueName),
 			amqp.LinkSourceAddress(queueName),
-			amqp.LinkSenderSettle(amqp.ModeUnsettled),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	
 		// Set the exact broker for sending the message
 		brokerToSend := "ex-aao-ss-0"
-		sender.SetSource(nil, map[amqp.Symbol]interface{}{"x-opt-send-to": brokerToSend})
 	
 		err = sender.Send(ctx, amqp.NewMessage([]byte(messageText)))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
