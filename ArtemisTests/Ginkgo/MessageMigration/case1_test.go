@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"pack.ag/amqp"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = ginkgo.Describe("MessageMigration Test", func() {
@@ -20,15 +20,25 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	var sender *amqp.Sender
 	var receiver *amqp.Receiver
 	var ctx context.Context
-	var err error
-
 	var kubeClient *kubernetes.Clientset
 	var namespace string
-	var pods *v1.PodList 
+	var pods *v1.PodList
+	var messageText = "specialtext"
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
 
+		// Initialize Kubernetes client with in-cluster config
+		config, err := clientcmd.BuildConfigFromFlags("", "")
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		kubeClient, err = kubernetes.NewForConfig(config)
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		// Set the namespace
+		namespace = "activemq-artemis-brokers"
+	})
+
+	ginkgo.It("should send, delete, and check messages", func() {
 		// List of broker addresses
 		brokerAddresses := []string{
 			"ex-aao-ss-0.ex-aao-hdls-svc.activemq-artemis-brokers.svc.cluster.local:61619",
@@ -59,20 +69,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		session, err = client.NewSession()
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-		// Initialize Kubernetes client with in-cluster config
-		config, err := clientcmd.BuildConfigFromFlags("", "")
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		kubeClient, err = kubernetes.NewForConfig(config)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-		// Set the namespace
-		namespace = "activemq-artemis-brokers"
-	})
-
-	ginkgo.It("should send, delete, and check messages", func() {
 		// Use the queue name without specifying the broker
 		queueName := "Testkube test-queue"
-		messageText := "specialtext"
 
 		// Specify the broker as a prefix in the source address when creating the sender
 		sourceAddress := "ex-aao-ss-2." + queueName
@@ -94,7 +92,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Wait for the last pod deletion to complete
 		podDeleted := false
-		timeout := time.After(2 * time.Minute) 
+		timeout := time.After(2 * time.Minute)
 		for {
 			select {
 			case <-timeout:
@@ -116,6 +114,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				time.Sleep(15 * time.Second)
 			}
 		}
+
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			// Create a receiver for each remaining pod
@@ -124,35 +123,38 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			fmt.Printf("Receiver created for broker '%s'.\n", sourceAddress)
-	
-			// Receive messages from the queue
-			msg, err := receiver.Receive(ctx)
-			if err != nil {
-				fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				// Close the receiver if there was an error
+
+			// Loop to attempt receiving messages multiple times
+			for i := 0; i < 3; i++ {
+				// Receive messages from the queue
+				msg, err := receiver.Receive(ctx)
+				if err != nil {
+					fmt.Printf("Error receiving message from pod '%s': %v\n", pod.Name, err)
+					gomega.Expect(err).NotTo(gomega.HaveOccurred())
+					// Close the receiver if there was an error
+					receiver.Close(ctx)
+					fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+					time.Sleep(5 * time.Second) // Wait before retrying
+					continue
+				}
+
+				fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
+
+				// Check if the received message matches the specific message
+				if string(msg.GetData()) == messageText {
+					// Accept the message
+					msg.Accept()
+					fmt.Printf("Message found in pod '%s'.\n", pod.Name)
+					return // Break out of the loop after finding the message in one pod
+				}
+
+				// Close the receiver
 				receiver.Close(ctx)
 				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-				continue
 			}
-	
-			fmt.Printf("Received message from pod '%s': %s\n", pod.Name, string(msg.GetData()))
-	
-			// Check if the received message matches the specific message
-			if string(msg.GetData()) == messageText {
-				// Accept the message
-				msg.Accept()
-				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
-				return // Break out of the loop after finding the message in one pod
-			}
-	
-			// Close the receiver
-			receiver.Close(ctx)
-			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
-		//}
-	
-		// If the loop completes without finding the message, fail the test
-		ginkgo.Fail("Message not found in any pod.")
+
+			// If the loop completes without finding the message, fail the test
+			ginkgo.Fail("Message not found in pod '%s' after multiple attempts.", pod.Name)
 		}
 	})
 
