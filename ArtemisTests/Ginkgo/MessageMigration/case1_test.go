@@ -59,8 +59,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "zzzz"
-		messageText := "zzzz"
+		queueName := "zlisa"
+		messageText := "zlili"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -99,7 +99,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				receivedBroker = broker
 	
 				// Print where the message was found
-				fmt.Printf("Message found in broker "broker".\n", receivedBroker)
+				fmt.Printf("Message found in broker '%s'.\n", receivedBroker)
 	
 				// Accept the message
 				msg.Accept()
@@ -139,27 +139,33 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	
-		ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+		// Reset the flag for the new search
+		messageFound = false
 	
-		msg, err := receiver.Receive(ctx)
-		if err == context.DeadlineExceeded {
-			// If timeout is reached, consider the message not found
-			fmt.Println("Timeout exceeded while searching for the message.")
-		} else if err != nil {
-			// Handle other errors
-			fmt.Printf("Error receiving message: %v\n", err)
-		} else {
+		// Iterate through brokers and check for the message
+		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
+			msg, err := receiver.Receive(ctx)
+			if err == context.DeadlineExceeded {
+				// If timeout is reached, consider the message not found
+				fmt.Println("Timeout exceeded while searching for the message.")
+				break
+			} else if err != nil {
+				// Handle other errors
+				fmt.Printf("Error receiving message: %v\n", err)
+				break
+			}
+	
 			// Check if the received message matches the specific message
 			if string(msg.GetData()) == messageText {
 				// Print where the message was found
-				fmt.Printf("Message found in broker '%s'.\n", deletePodName)
+				fmt.Printf("Message found in broker '%s'.\n", broker)
 	
 				// Accept the message
 				msg.Accept()
 	
 				// Set the flag to true
 				messageFound = true
+				break
 			}
 	
 			// Close the receiver
