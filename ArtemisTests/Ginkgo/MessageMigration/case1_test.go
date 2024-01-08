@@ -84,7 +84,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	
 		// Wait for a short duration
-		time.Sleep(1 * time.Second)
+		fmt.Printf("Message sent")
+		time.Sleep(60 * time.Second)
+
 	
 		// Delete the ex-aao-ss-2 pod
 		deletePodName := "ex-aao-ss-2"
@@ -97,7 +99,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	
 		// Print a message indicating the start of the search
 		fmt.Println("Searching for the message in other brokers...")
-	
+		time.Sleep(120 * time.Second)
 		// Loop through the pod names (ex-aao-ss-0, ex-aao-ss-1) to find the specific message
 		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1"} {
 			receiver, err = session.NewReceiver(
