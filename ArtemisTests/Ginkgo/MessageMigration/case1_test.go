@@ -59,8 +59,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "8888"
-		messageText := "8888"
+		queueName := "zzzzz"
+		messageText := "zzzz"
 	
 		// Step 1: Create a sender and send a message to the specific queue in the headless connection
 		sender, err = session.NewSender(
@@ -120,7 +120,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			receiver.Close(ctx)
 		}
 	
-		// Step 4: Delete the broker that received the message
+		// Step 4: Delete the broker that initially received the message
 		deletePodName := receivedBroker
 		deletePodNamespace := "activemq-artemis-brokers"
 		deletePropagationPolicy := metav1.DeletePropagationForeground
