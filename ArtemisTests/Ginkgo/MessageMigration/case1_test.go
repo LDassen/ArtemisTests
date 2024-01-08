@@ -70,8 +70,8 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 	})
 
 	ginkgo.It("should send, delete, and check messages", func() {
-		queueName := "SpecificQueue"
-		messageText := "Hello, this is a test message"
+		queueName := "Laurent"
+		messageText := "Hello, laurent"
 
 		// Create a sender and send a message to the specific queue in ex-aao-ss-2 broker
 		sender, err = session.NewSender(
