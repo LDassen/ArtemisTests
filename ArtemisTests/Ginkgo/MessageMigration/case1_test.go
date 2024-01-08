@@ -205,15 +205,17 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	ginkgo.AfterEach(func() {
 		// Close resources in reverse order of creation
-		closeAmqpResources(ctx, sender, receiver, session, client)
+		if sender != nil {
+			sender.Close(ctx)
+		}
+		if receiver != nil {
+			receiver.Close(ctx)
+		}
+		if session != nil {
+			session.Close(ctx)
+		}
+		if client != nil {
+			client.Close()
+		}
 	})
 })
-
-// Utility function to close AMQP resources
-func closeAmqpResources(ctx context.Context, resources ...amqp.Closer) {
-	for _, r := range resources {
-		if r != nil {
-			r.Close(ctx)
-		}
-	}
-}
