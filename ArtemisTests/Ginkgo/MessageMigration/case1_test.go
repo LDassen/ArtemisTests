@@ -23,6 +23,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 	var kubeClient *kubernetes.Clientset
 	var namespace string
+	var pods *v1.PodList // Declare pods outside the loop
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
@@ -92,7 +93,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 
 		// Wait for the last pod deletion to complete
 		podDeleted := false
-		timeout := time.After(10 * time.Minute) // Increased timeout to 10 minutes
+		timeout := time.After(5 * time.Minute) 
 		for {
 			select {
 			case <-timeout:
@@ -149,9 +150,9 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				messageFoundMap[pod.Name] = true
 			}
 
-				// Close the receiver
-				receiver.Close(ctx)
-				fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+			// Close the receiver
+			receiver.Close(ctx)
+			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
 		}
 
 		// Check if the message was found in any pod
