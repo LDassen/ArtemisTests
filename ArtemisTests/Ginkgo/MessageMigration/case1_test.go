@@ -116,10 +116,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				time.Sleep(15 * time.Second)
 			}
 		}
-
-		// Create a map to store whether a message is found for each pod
-		messageFoundMap := make(map[string]bool)
-
 		// Loop through all pods with the label to find the specific message
 		for _, pod := range pods.Items {
 			// Create a receiver for each remaining pod
@@ -153,6 +149,10 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 			// Close the receiver
 			receiver.Close(ctx)
 			fmt.Printf("Receiver closed for pod '%s'.\n", pod.Name)
+		}
+	
+		// If the loop completes without finding the message, fail the test
+		ginkgo.Fail("Message not found in any pod.")
 		}
 	
 		// If the loop completes without finding the message, fail the test
