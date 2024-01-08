@@ -79,14 +79,15 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		time.Sleep(60 * time.Second)
 
 		// Step 3: Determine which broker received the message
-		var receivedBroker string
-		messageFound := true
+		messageFound := false
 
 		// Create the receiver outside the loop
 		receiver, err := session.NewReceiver(
 			amqp.LinkSourceAddress(queueName),
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		var receivedBroker string // Move the declaration inside the loop
 
 		for _, broker := range []string{"ex-aao-ss-0", "ex-aao-ss-1", "ex-aao-ss-2"} {
 			// Skip the deleted broker
