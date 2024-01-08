@@ -99,7 +99,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				receivedBroker = broker
 	
 				// Print where the message was found
-				fmt.Printf("Message found in broker '%s'.\n", receivedBroker)
+				fmt.Printf("Message found in broker "broker".\n", receivedBroker)
 	
 				// Accept the message
 				msg.Accept()
