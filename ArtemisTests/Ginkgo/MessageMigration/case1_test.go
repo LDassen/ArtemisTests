@@ -147,11 +147,6 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 				// Accept the message
 				msg.Accept()
 				fmt.Printf("Message found in pod '%s'.\n", pod.Name)
-				// Set the flag to true
-				messageFound := true
-	
-				// Check if the message was found in any pod
-				gomega.Expect(messageFound).To(gomega.BeTrue(), "Message not found in any pod.")
 				return // Break out of the loop after finding the message in one pod
 			}
 	
@@ -161,7 +156,7 @@ var _ = ginkgo.Describe("MessageMigration Test", func() {
 		}
 	
 		// If the loop completes without finding the message, fail the test
-		gomega.Fail("Message not found in any pod.")
+		ginkgo.Fail("Message not found in any pod.")
 	})
 
 	ginkgo.AfterEach(func() {
