@@ -31,10 +31,10 @@ var _ = Describe("ConfigMap Check in All Namespaces", func() {
             cm, err := clientset.CoreV1().ConfigMaps(namespace.Name).Get(context.TODO(), "ca-bundle", metav1.GetOptions{})
             Expect(err).NotTo(HaveOccurred(), "Namespace: "+namespace.Name)
 
-            // Check if the 'SYNCED' status is 'true' in the ConfigMap annotations or data
-            synced, exists := cm.Annotations["SYNCED"] // or use cm.Data based on where SYNCED is stored
-            Expect(exists).To(BeTrue(), "SYNCED annotation missing in ca-bundle ConfigMap in Namespace: "+namespace.Name)
-            Expect(synced).To(Equal("true"), "SYNCED is not true in ca-bundle ConfigMap in Namespace: "+namespace.Name)
+            // Parse the ConfigMap data to check the 'SYNCED' status
+            syncedStatus, exists := cm.Data["SYNCED"]
+            Expect(exists).To(BeTrue(), "SYNCED field missing in ca-bundle ConfigMap in Namespace: "+namespace.Name)
+            Expect(syncedStatus).To(Equal("True"), "SYNCED is not true in ca-bundle ConfigMap in Namespace: "+namespace.Name)
         }
     })
 })
