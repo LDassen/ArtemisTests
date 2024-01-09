@@ -19,7 +19,7 @@ var _ = Describe("Artemis on-prem Broker Pods", func() {
 		clientset, err := kubernetes.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		namespace := "activemq-artemis-brokers"
+		namespace := "artemistest"
 		expectedPodPrefix0 := "artemis-statefulset-0"
 		expectedPodPrefix1 := "artemis-statefulset-1"
 		expectedPodPrefix2 := "artemis-statefulset-2"
