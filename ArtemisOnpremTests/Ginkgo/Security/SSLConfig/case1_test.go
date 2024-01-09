@@ -15,7 +15,7 @@ var _ = Describe("Artemis SSL and AMQP Test", func() {
 
     BeforeEach(func() {
         // Load the CA certificate
-        caCert, err := ioutil.ReadFile("/etc/secret/keystore.jks") // Replace with actual path to your CA cert
+        caCert, err := ioutil.ReadFile("/etc/bundle/kafka-bundle.pem") // Replace with actual path to your CA cert
         Expect(err).NotTo(HaveOccurred())
 
         // Create a CA certificate pool and add cert to it
