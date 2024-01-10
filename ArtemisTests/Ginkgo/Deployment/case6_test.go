@@ -19,7 +19,7 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		configMapName := "ca-bundle"
-		namespace := metav1.NamespaceAll // Specify metav1.NamespaceAll for cluster-wide search
+		namespace := metav1.NamespaceNone // Specify metav1.NamespaceNone for cluster-wide search
 
 		// Fetch the ConfigMap without specifying a namespace for cluster-wide search
 		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
