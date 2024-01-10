@@ -23,9 +23,9 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 		Expect(err).To(BeNil(), "Error getting ConfigMap '%s' in namespace '%s': %v", configMapName, namespace, err)
 
-		// Check if 'synced' field exists and is set to 'true'
-		synced, found := configMap.Data["reason"]
-		Expect(found).To(BeTrue(), "Field 'synced' not found in ConfigMap '%s' in namespace '%s'", configMapName, namespace)
-		Expect(synced).To(Equal("synced"), "Expected 'synced' to be 'true' in ConfigMap '%s' in namespace '%s', but found '%s'", configMapName, namespace, synced)
+		// Check if 'SYNCED' field exists and is set to 'True'
+		synced, found := configMap.Data["SYNCED"]
+		Expect(found).To(BeTrue(), "Field 'SYNCED' not found in ConfigMap '%s' in namespace '%s'", configMapName, namespace)
+		Expect(synced).To(Equal("True"), "Expected 'SYNCED' to be 'True' in ConfigMap '%s' in namespace '%s', but found '%s'", configMapName, namespace, synced)
 	})
 })
