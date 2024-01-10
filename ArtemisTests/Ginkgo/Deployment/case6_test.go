@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
-	It("should ensure ca-bundle ConfigMap is synced", func() {
+	It("should ensure ca-bundle ConfigMap is synced in the activemq-artemis-brokers namespace", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -19,10 +19,11 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		configMapName := "ca-bundle"
+		namespace := "activemq-artemis-brokers"
 
-		// Fetch the ConfigMap without specifying a namespace for cluster-wide search
-		configMap, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceNone).Get(context.TODO(), configMapName, metav1.GetOptions{})
-		Expect(err).To(BeNil(), "Error getting ConfigMap '%s': %v", configMapName, err)
+		// Fetch the ConfigMap in the specified namespace
+		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+		Expect(err).To(BeNil(), "Error getting ConfigMap '%s' in namespace '%s': %v", configMapName, namespace, err)
 
 		// Assuming 'Bundles' is a JSON-encoded string
 		var bundlesData map[string]interface{}
@@ -30,7 +31,7 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 
 		// Check if 'status.conditions' array exists
 		conditions, found := bundlesData["status"].(map[string]interface{})["conditions"].([]interface{})
-		Expect(found).To(BeTrue(), "Field 'status.conditions' not found in 'Bundles' of ConfigMap '%s'", configMapName)
+		Expect(found).To(BeTrue(), "Field 'status.conditions' not found in 'Bundles' of ConfigMap '%s' in namespace '%s'", configMapName, namespace)
 
 		// Check if any condition has 'type' set to 'Synced' and 'status' set to 'True'
 		var syncedConditionFound bool
@@ -42,6 +43,6 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 			}
 		}
 
-		Expect(syncedConditionFound).To(BeTrue(), "Expected 'Synced' condition with 'status' 'True' in ConfigMap '%s'", configMapName)
+		Expect(syncedConditionFound).To(BeTrue(), "Expected 'Synced' condition with 'status' 'True' in ConfigMap '%s' in namespace '%s'", configMapName, namespace)
 	})
 })
