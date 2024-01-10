@@ -9,9 +9,9 @@ import (
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/util/jsonpath"
+	"k8s.io/client-go/util/wait"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -35,7 +35,7 @@ var _ = Describe("Check ClusterIssuers", func() {
 
 		var clusterIssuersList runtime.Object
 		err = json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil).
-			Decode(result.Body(), nil, &clusterIssuersList)
+			Decode(result.Body(), &clusterIssuersList)
 		Expect(err).To(BeNil(), "Error converting result to List: %v", err)
 
 		foundClusterIssuers := extractClusterIssuerNames(clusterIssuersList)
@@ -52,12 +52,12 @@ func extractClusterIssuerNames(clusterIssuersList runtime.Object) []string {
 	jsonPath := jsonpath.New("clusterissuer-name")
 	err := jsonPath.Parse("{.items[*].metadata.name}")
 	if err != nil {
-		Fail("Error parsing JSON path: %v", err)
+		Fail(fmt.Sprintf("Error parsing JSON path: %v", err))
 	}
 
-	err = jsonPath.Execute(json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil), result.Body(), &foundClusterIssuers)
+	err = jsonPath.Execute(wait.NeverStop, result.Body(), &foundClusterIssuers)
 	if err != nil {
-		Fail("Error extracting ClusterIssuer names: %v", err)
+		Fail(fmt.Sprintf("Error extracting ClusterIssuer names: %v", err))
 	}
 
 	return foundClusterIssuers
