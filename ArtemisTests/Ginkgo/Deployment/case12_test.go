@@ -1,4 +1,4 @@
-package SSLConfig_test
+package Deployment_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
