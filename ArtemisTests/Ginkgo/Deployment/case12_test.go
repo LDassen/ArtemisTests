@@ -1,10 +1,11 @@
 package Deployment_test
 
+
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
-"k8s.io/client-go/rest"
+	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"context"
 )
@@ -22,6 +23,20 @@ var _ = Describe("ClusterIssuers Check", func() {
 	})
 
 	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer'", func() {
+		// Discover resources
+		resourceList, err := clientset.Discovery().ServerResources()
+		Expect(err).NotTo(HaveOccurred(), "Error discovering server resources")
+
+		// Check if ClusterIssuers exist
+		found := false
+		for _, resource := range resourceList {
+			if resource.GroupVersion == "cert-manager.io/v1" && resource.Resource == "clusterissuers" {
+				found = true
+				break
+			}
+		}
+		Expect(found).To(BeTrue(), "ClusterIssuers not found in server resources")
+
 		// Check 'amq-ca-issuer'
 		issuer1, err := clientset.CertificatesV1().ClusterIssuers().Get(context.TODO(), "amq-ca-issuer", metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred(), "Error while checking 'amq-ca-issuer'")
