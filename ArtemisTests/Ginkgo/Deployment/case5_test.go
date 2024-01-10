@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Check if Certificates are present in the correct namespace", func() {
+var _ = Describe("Check if certificates are present in the correct namespace", func() {
 	It("should ensure the certificates exist in the specified namespaces", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
