@@ -5,20 +5,15 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Check if Certificates are present in the correct namespace", func() {
 	It("should ensure the certificates exist in the specified namespaces", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
-
-		clientset, err := kubernetes.NewForConfig(config)
-		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		certManagerClient, err := cmclient.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Cert-Manager client: %v", err)
