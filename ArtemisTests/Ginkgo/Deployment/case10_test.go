@@ -23,13 +23,13 @@ var _ = Describe("Check ClusterIssuers", func() {
 
 		// Use the REST client to get ClusterIssuers
 		restClient := clientset.CoreV1().RESTClient()
-		result, err := restClient.
+		req := restClient.
 			Get().
 			Resource("clusterissuers").
-			VersionedParams(&metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "ClusterIssuer"}}, metav1.ParameterCodec).
-			Do(context.TODO())
+			VersionedParams(&metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "ClusterIssuer"}}, metav1.ParameterCodec)
 
-		Expect(err).To(BeNil(), "Error getting ClusterIssuers: %v", err)
+		result := req.Do(context.TODO())
+		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
 		// Check if the response status code indicates success
 		Expect(result.StatusCode()).To(Equal(200), "Unexpected status code: %d", result.StatusCode())
