@@ -24,8 +24,8 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 		Expect(err).To(BeNil(), "Error getting ConfigMap '%s' in namespace '%s': %v", configMapName, namespace, err)
 
 		// Check if 'SYNCED' field exists and is set to 'True'
-		synced, found := configMap.Data["SYNCED"]
+		synced, found := configMap.Data["reason"]
 		Expect(found).To(BeTrue(), "Field 'SYNCED' not found in ConfigMap '%s' in namespace '%s'", configMapName, namespace)
-		Expect(synced).To(Equal("True"), "Expected 'SYNCED' to be 'True' in ConfigMap '%s' in namespace '%s', but found '%s'", configMapName, namespace, synced)
+		Expect(synced).To(Equal("Synced"), "Expected 'SYNCED' to be 'True' in ConfigMap '%s' in namespace '%s', but found '%s'", configMapName, namespace, synced)
 	})
 })
