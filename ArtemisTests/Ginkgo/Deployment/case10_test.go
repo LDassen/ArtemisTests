@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -23,35 +23,31 @@ var _ = Describe("Check ClusterIssuers", func() {
 
 		// Use the REST client to get ClusterIssuers
 		restClient := clientset.CoreV1().RESTClient()
-		req := restClient.Get().
+		result, err := restClient.
+			Get().
 			Resource("clusterissuers").
-			VersionedParams(nil, metav1.ParameterCodec)
+			VersionedParams(&metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "ClusterIssuer"}}, metav1.ParameterCodec).
+			Do(context.TODO())
 
-		result := req.Do(context.TODO())
-		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
+		Expect(err).To(BeNil(), "Error getting ClusterIssuers: %v", err)
 
-		clusterIssuersList := &unstructured.UnstructuredList{}
-		err = result.Into(clusterIssuersList)
-		Expect(err).To(BeNil(), "Error converting result to UnstructuredList: %v", err)
+		// Check if the response status code indicates success
+		Expect(result.StatusCode()).To(Equal(200), "Unexpected status code: %d", result.StatusCode())
 
-		foundClusterIssuers := extractClusterIssuerNames(clusterIssuersList)
+		// Parse the JSONPath template
+		template := "{range .items[*]}{.metadata.name}{end}"
+		parser := jsonpath.New("clusterissuer-name")
+		parser.AllowMissingKeys(true)
+		err = parser.Parse(template)
+		Expect(err).To(BeNil(), "Error parsing JSONPath template: %v", err)
+
+		// Evaluate JSONPath template on the response object
+		var foundClusterIssuers []string
+		err = parser.Execute(result, &foundClusterIssuers)
+		Expect(err).To(BeNil(), "Error evaluating JSONPath: %v", err)
 
 		// Check if all expected ClusterIssuers are found
 		Expect(foundClusterIssuers).To(ConsistOf(expectedClusterIssuers),
-			"Expected ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
+			"Expected ready ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
 	})
 })
-
-func extractClusterIssuerNames(clusterIssuersList *unstructured.UnstructuredList) []string {
-	var foundClusterIssuers []string
-
-	for _, item := range clusterIssuersList.Items {
-		issuerName, found, _ := unstructured.NestedString(item.Object, "metadata", "name")
-		if found {
-			foundClusterIssuers = append(foundClusterIssuers, issuerName)
-			fmt.Printf("Found ClusterIssuer: %s\n", issuerName)
-		}
-	}
-
-	return foundClusterIssuers
-}
