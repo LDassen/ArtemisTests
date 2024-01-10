@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var _ = Describe("Kafka Broker Pods", func() {
+var _ = Describe("Check the ActiveMQ Artemis Broker Pods", func() {
 	It("should have the correct 'ex-aao-ss-' prefixed pods running", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
