@@ -8,8 +8,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	"github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
+	cmapi "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmclient "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned"
 )
 
 var _ = Describe("Check if Certificates are present in the correct namespace", func() {
@@ -20,7 +20,7 @@ var _ = Describe("Check if Certificates are present in the correct namespace", f
 		clientset, err := kubernetes.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		certManagerClient, err := versioned.NewForConfig(config)
+		certManagerClient, err := cmclient.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Cert-Manager client: %v", err)
 
 		// Check for the certificate in 'activemq-artemis-brokers' namespace
