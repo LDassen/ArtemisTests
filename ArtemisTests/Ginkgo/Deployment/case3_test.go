@@ -24,12 +24,9 @@ var _ = Describe("Check StatefulSet Existence", func() {
 		statefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), statefulSetName, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("StatefulSet '%s' not found in namespace '%s'\n", statefulSetName, namespace)
-			// Handle the absence of StatefulSet as needed
-			// You may choose to fail the test or perform additional actions
 		} else {
 			fmt.Printf("StatefulSet '%s' found in namespace '%s'\n", statefulSetName, namespace)
 			fmt.Printf("Replicas: %d\n", statefulSet.Status.Replicas)
-			// Add additional checks or actions based on the StatefulSet's presence
 		}
 	})
 })
