@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
-	It("should have operator pod running in 'activemq-artermis-operator' namespace", func() {
+var _ = Describe("ActiveMQ Artemis Operator Pod", func() {
+	It("should have operator pod running in 'activemq-artermis-operator' namespace with label 'activemq-artemis-controller-manager'", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -28,13 +28,17 @@ var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 		var actualPodCount int
 		for _, pod := range pods.Items {
 			if strings.HasPrefix(pod.Name, expectedPodPrefix) && pod.Status.Phase == "Running" {
-				fmt.Printf("Operator Pod Name: %s\n", pod.Name)
-				actualPodCount++
+				controllerManagerLabel, found := pod.Labels["activemq-artemis-controller-manager"]
+				if found {
+					fmt.Printf("Operator Pod Name: %s\n", pod.Name)
+					fmt.Printf("Controller Manager Label: %s\n", controllerManagerLabel)
+					actualPodCount++
+				}
 			}
 		}
 
 		// Set your expected number of operator pods here
 		expectedPodCount := 1
-		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'operator-pod' pod, but found %d", expectedPodCount, actualPodCount)
+		Expect(actualPodCount).To(Equal(expectedPodCount), "Expected %d 'operator-pod' pod with label 'activemq-artemis-controller-manager', but found %d", expectedPodCount, actualPodCount)
 	})
 })
