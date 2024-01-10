@@ -21,7 +21,7 @@ var _ = Describe("Check Securityfile Existence", func() {
 		namespace := "activemq-artemis-brokers"
 		securityfileName := "ex-aao-prop"
 
-		_, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), securityfileName, metav1.GetOptions{})
+		securityfileName, err = clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), securityfileName, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("Securityfile '%s' not found in namespace '%s'\n", securityfileName, namespace)
 		} else {
