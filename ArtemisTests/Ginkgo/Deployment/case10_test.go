@@ -3,28 +3,29 @@ package Deployment_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
-	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer' ClusterIssuers with ready set to true in the 'cert-manager' namespace", func() {
+	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer' ClusterIssuers with ready set to true", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
 		clientset, err := kubernetes.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		namespace := "cert-manager"
 		expectedClusterIssuers := []string{"amq-ca-issuer", "amq-selfsigned-cluster-issuer"}
 
-		clusterIssuers, err := clientset.
-			CertificatesV1().
-			ClusterIssuers().
-			List(context.TODO(), metav1.ListOptions{})
+		// Use certificatesV1beta1 client instead of CertificatesV1
+		certificatesClient := clientset.CertificatesV1beta1()
+
+		clusterIssuers, err := certificatesClient.ClusterIssuers().List(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil(), "Error getting ClusterIssuers: %v", err)
 
 		var foundClusterIssuers []string
