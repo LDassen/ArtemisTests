@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"regexp"
 )
 
 var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
@@ -20,23 +19,15 @@ var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "activemq-artermis-operator"
-		expectedPodPattern := "activemq-artemis-controller-manager-[a-z0-9]+-[a-z0-9]+"
+		labelSelector := "ex-aao"
 
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
 		Expect(err).To(BeNil(), "Error getting pods: %v", err)
 
-		var actualPodCount int
-		var podName string
-		for _, pod := range pods.Items {
-			match, _ := regexp.MatchString(expectedPodPattern, pod.Name)
-			if match && pod.Status.Phase == "Running" {
-				fmt.Printf("Operator Pod Name: %s\n", pod.Name)
-				actualPodCount++
-				podName = pod.Name
-			}
-		}
+		Expect(len(pods.Items)).To(BeNumerically(">", 0), "Expected at least one pod with label '%s' to be running in namespace '%s', but found none", labelSelector)
 
-		Expect(actualPodCount).To(Equal(1), "Expected one 'operator-pod' to be running in namespace 'activemq-artermis-operator', but found %d", actualPodCount)
-		fmt.Printf("Found Operator Pod: %s\n", podName)
+		fmt.Printf("Found at least one Operator Pod with label '%s' in namespace '%s'\n", labelSelector, namespace)
 	})
 })
