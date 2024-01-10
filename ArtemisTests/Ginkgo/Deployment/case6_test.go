@@ -19,11 +19,10 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		configMapName := "ca-bundle"
-		namespace := metav1.NamespaceNone // Specify metav1.NamespaceNone for cluster-wide search
 
 		// Fetch the ConfigMap without specifying a namespace for cluster-wide search
-		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
-		Expect(err).To(BeNil(), "Error getting ConfigMap '%s' in namespace '%s': %v", configMapName, namespace, err)
+		configMap, err := clientset.CoreV1().ConfigMaps(metav1.NamespaceNone).Get(context.TODO(), configMapName, metav1.GetOptions{})
+		Expect(err).To(BeNil(), "Error getting ConfigMap '%s': %v", configMapName, err)
 
 		// Assuming 'Bundles' is a JSON-encoded string
 		var bundlesData map[string]interface{}
