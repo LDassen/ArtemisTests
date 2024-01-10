@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/util/wait"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -30,7 +29,8 @@ var _ = Describe("Check ClusterIssuers", func() {
 		result := req.Do(context.TODO())
 		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
-		clusterIssuersList, err := unstructuredListFromResponse(result.Raw())
+		clusterIssuersList := &unstructured.UnstructuredList{}
+		err = result.Into(clusterIssuersList)
 		Expect(err).To(BeNil(), "Error converting result to UnstructuredList: %v", err)
 
 		foundClusterIssuers := extractClusterIssuerNames(clusterIssuersList)
@@ -40,12 +40,6 @@ var _ = Describe("Check ClusterIssuers", func() {
 			"Expected ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
 	})
 })
-
-func unstructuredListFromResponse(rawResponse []byte) (*unstructured.UnstructuredList, error) {
-	ul := &unstructured.UnstructuredList{}
-	err := ul.UnmarshalJSON(rawResponse)
-	return ul, err
-}
 
 func extractClusterIssuerNames(clusterIssuersList *unstructured.UnstructuredList) []string {
 	var foundClusterIssuers []string
