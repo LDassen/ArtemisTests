@@ -2,7 +2,6 @@ package Deployment_test
 
 import (
 	"context"
-	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
@@ -32,7 +31,7 @@ var _ = Describe("Check ClusterIssuers", func() {
 		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
 		// Check if the response status code indicates success
-		Expect(result.StatusCode()).To(Equal(200), "Unexpected status code: %d", result.StatusCode())
+		Expect(result.Response().StatusCode).To(Equal(200), "Unexpected status code: %d", result.Response().StatusCode)
 
 		// Parse the JSONPath template
 		template := "{range .items[*]}{.metadata.name}{end}"
@@ -43,7 +42,7 @@ var _ = Describe("Check ClusterIssuers", func() {
 
 		// Evaluate JSONPath template on the response object
 		var foundClusterIssuers []string
-		err = parser.Execute(result, &foundClusterIssuers)
+		err = parser.Execute(result.Response(), &foundClusterIssuers)
 		Expect(err).To(BeNil(), "Error evaluating JSONPath: %v", err)
 
 		// Check if all expected ClusterIssuers are found
