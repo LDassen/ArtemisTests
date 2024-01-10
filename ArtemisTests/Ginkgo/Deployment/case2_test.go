@@ -29,7 +29,7 @@ var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 		for _, pod := range pods.Items {
 			match, _ := regexp.MatchString(expectedPodPattern, pod.Name)
 			if match && pod.Status.Phase == "Running" {
-				controllerManagerLabel, found := pod.Labels["activemq-artemis-controller-manager"]
+				controllerManagerLabel, found := pod.Labels["ActiveMQArtemis=ex-aao,application=ex-aao-app"]
 				if found {
 					fmt.Printf("Operator Pod Name: %s\n", pod.Name)
 					fmt.Printf("Controller Manager Label: %s\n", controllerManagerLabel)

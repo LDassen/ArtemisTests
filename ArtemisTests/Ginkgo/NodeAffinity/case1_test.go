@@ -30,7 +30,7 @@ var _ = ginkgo.Describe("ActiveMQ Artemis Node Affinity Test", func() {
 	ginkgo.It("Should have ActiveMQArtemis pods on at least two different nodes", func() {
 		// Get the list of broker pods in the namespace
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: "ActiveMQArtemis=ex-aao,application=ex-aao-app", // Update with the actual label selector for broker pods
+			LabelSelector: "ActiveMQArtemis=ex-aao,application=ex-aao-app", 
 		})
 		gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Error getting broker pod list")
 
