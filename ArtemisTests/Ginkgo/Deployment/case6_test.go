@@ -19,7 +19,8 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 
 		configMapName := "ca-bundle"
 
-		configMap, err := clientset.CoreV1().ConfigMaps("").Get(context.TODO(), configMapName, metav1.GetOptions{})
+		configMap, err := clientset.CoreV1().ConfigMaps("").
+			Get(context.TODO(), configMapName, metav1.GetOptions{})
 		Expect(err).To(BeNil(), "Error getting ConfigMap '%s': %v", configMapName, err)
 
 		// Check if 'SYNCED' field exists and is set to 'True'
