@@ -24,10 +24,10 @@ var _ = Describe("Check ConfigMap Existence", func() {
 		_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("ConfigMap '%s' not found in namespace '%s'\n", configMapName, namespace)
-			Expect(err).To(HaveOccurred(), "Expected ConfigMap to be missing, but got no error.")
+			Expect(err).NotTo(BeNil(), "Expected ConfigMap to be missing, but got no error.")
 		} else {
 			fmt.Printf("ConfigMap '%s' found in namespace '%s'\n", configMapName, namespace)
-			Expect(err).To(BeNil(), "Expected ConfigMap to exist, but got an error.")
+			Expect(err).To(BeNil(), "Expected ConfigMap to exist, but got an error: %v", err)
 		}
 	})
 })
