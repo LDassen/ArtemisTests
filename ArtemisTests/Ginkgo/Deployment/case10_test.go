@@ -3,12 +3,15 @@ package Deployment_test
 import (
 	"context"
 	"fmt"
-	"strings"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -30,45 +33,32 @@ var _ = Describe("Check ClusterIssuers", func() {
 		result := req.Do(context.TODO())
 		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
-		var clusterIssuersList metav1.List
-		err = result.Into(&clusterIssuersList)
+		var clusterIssuersList runtime.Object
+		err = json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil).
+			Decode(result.Body(), nil, &clusterIssuersList)
 		Expect(err).To(BeNil(), "Error converting result to List: %v", err)
 
-		var foundClusterIssuers []string
-		for _, item := range clusterIssuersList.Items {
-			issuer, ok := item.(*unstructured.Unstructured)
-			if !ok {
-				Fail("Failed to convert item to Unstructured")
-			}
-
-			issuerName, found, _ := unstructured.NestedString(issuer.Object, "metadata", "name")
-			if !found {
-				Fail("Failed to extract issuer name")
-			}
-
-			conditions, found, _ := unstructured.NestedSlice(issuer.Object, "status", "conditions")
-			if !found {
-				Fail("Failed to extract conditions")
-			}
-
-			// Check if 'Ready' condition is true
-			ready := false
-			for _, condition := range conditions {
-				status, found, _ := unstructured.NestedString(condition.(map[string]interface{}), "status")
-				if found && status == "True" {
-					ready = true
-					break
-				}
-			}
-
-			if ready {
-				foundClusterIssuers = append(foundClusterIssuers, issuerName)
-				fmt.Printf("Found ready ClusterIssuer: %s\n", issuerName)
-			}
-		}
+		foundClusterIssuers := extractClusterIssuerNames(clusterIssuersList)
 
 		// Check if all expected ClusterIssuers are found
 		Expect(foundClusterIssuers).To(ConsistOf(expectedClusterIssuers),
 			"Expected ready ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
 	})
 })
+
+func extractClusterIssuerNames(clusterIssuersList runtime.Object) []string {
+	var foundClusterIssuers []string
+
+	jsonPath := jsonpath.New("clusterissuer-name")
+	err := jsonPath.Parse("{.items[*].metadata.name}")
+	if err != nil {
+		Fail("Error parsing JSON path: %v", err)
+	}
+
+	err = jsonPath.Execute(json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil), result.Body(), &foundClusterIssuers)
+	if err != nil {
+		Fail("Error extracting ClusterIssuer names: %v", err)
+	}
+
+	return foundClusterIssuers
+}
