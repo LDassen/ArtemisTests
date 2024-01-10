@@ -21,14 +21,14 @@ var _ = Describe("Check if Certificates are present in the correct namespace", f
 		// Check for the certificate in 'activemq-artemis-brokers' namespace
 		amqTLSCertName := "amq-tls-acceptor-cert"
 		amqTLSCertNamespace := "activemq-artemis-brokers"
-		amqTLSCert, err := clientset.CoreV1().Secrets(amqTLSCertNamespace).Get(context.TODO(), amqTLSCertName, metav1.GetOptions{})
+		_, err = clientset.CoreV1().Secrets(amqTLSCertNamespace).Get(context.TODO(), amqTLSCertName, metav1.GetOptions{})
 		Expect(err).To(BeNil(), "Error getting certificate '%s' in namespace '%s': %v", amqTLSCertName, amqTLSCertNamespace, err)
 		fmt.Printf("Certificate '%s' found in namespace '%s'\n", amqTLSCertName, amqTLSCertNamespace)
 
 		// Check for the certificate in 'cert-manager' namespace
 		selfSignedCACertName := "amq-selfsigned-ca"
 		selfSignedCACertNamespace := "cert-manager"
-		selfSignedCACert, err := clientset.CoreV1().Secrets(selfSignedCACertNamespace).Get(context.TODO(), selfSignedCACertName, metav1.GetOptions{})
+		_, err = clientset.CoreV1().Secrets(selfSignedCACertNamespace).Get(context.TODO(), selfSignedCACertName, metav1.GetOptions{})
 		Expect(err).To(BeNil(), "Error getting certificate '%s' in namespace '%s': %v", selfSignedCACertName, selfSignedCACertNamespace, err)
 		fmt.Printf("Certificate '%s' found in namespace '%s'\n", selfSignedCACertName, selfSignedCACertNamespace)
 	})
