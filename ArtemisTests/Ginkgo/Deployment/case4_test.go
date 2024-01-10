@@ -21,11 +21,12 @@ var _ = Describe("Check Securityfile Existence", func() {
 		namespace := "activemq-artemis-brokers"
 		securityfileName := "ex-aao-prop"
 
-		securityfile, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), securityfileName, metav1.GetOptions{})
+		securityFile, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), securityfileName, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("Securityfile '%s' not found in namespace '%s'\n", securityfileName, namespace)
 		} else {
 			fmt.Printf("Securityfile '%s' found in namespace '%s'\n", securityfileName, namespace)
+			fmt.Printf("Replicas: %d\n", securityFile.Status.Replicas)
 		}
 	})
 })
