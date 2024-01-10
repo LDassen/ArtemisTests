@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/jsonpath"
+	"strings"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -31,7 +32,7 @@ var _ = Describe("Check ClusterIssuers", func() {
 		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
 		// Check if the response status code indicates success
-		Expect(result.Response().StatusCode).To(Equal(200), "Unexpected status code: %d", result.Response().StatusCode)
+		Expect(result.StatusCode).To(Equal(200), "Unexpected status code: %d", result.StatusCode)
 
 		// Parse the JSONPath template
 		template := "{range .items[*]}{.metadata.name}{end}"
@@ -40,9 +41,9 @@ var _ = Describe("Check ClusterIssuers", func() {
 		err = parser.Parse(template)
 		Expect(err).To(BeNil(), "Error parsing JSONPath template: %v", err)
 
-		// Evaluate JSONPath template on the response object
+		// Evaluate JSONPath template on the response body
 		var foundClusterIssuers []string
-		err = parser.Execute(result.Response(), &foundClusterIssuers)
+		err = parser.Execute(result.Raw(), &foundClusterIssuers)
 		Expect(err).To(BeNil(), "Error evaluating JSONPath: %v", err)
 
 		// Check if all expected ClusterIssuers are found
