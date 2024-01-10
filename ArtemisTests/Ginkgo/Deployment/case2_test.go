@@ -8,10 +8,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
+	"regexp"
 )
 
-var _ = Describe("ActiveMQ Artemis Operator Pod", func() {
+var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 	It("should have operator pod running in 'activemq-artermis-operator' namespace with label 'activemq-artemis-controller-manager'", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
@@ -20,20 +20,29 @@ var _ = Describe("ActiveMQ Artemis Operator Pod", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "activemq-artermis-operator"
-		expectedPodPrefix := "activemq-artemis-controller-manager"
+		expectedPodPattern := "activemq-artemis-controller-manager-[a-z0-9]+-[a-z0-9]+"
 
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil(), "Error getting pods: %v", err)
 
 		var actualPodCount int
 		for _, pod := range pods.Items {
-			if strings.HasPrefix(pod.Name, expectedPodPrefix) && pod.Status.Phase == "Running" {
+			match, _ := regexp.MatchString(expectedPodPattern, pod.Name)
+			if match && pod.Status.Phase == "Running" {
 				controllerManagerLabel, found := pod.Labels["activemq-artemis-controller-manager"]
 				if found {
 					fmt.Printf("Operator Pod Name: %s\n", pod.Name)
 					fmt.Printf("Controller Manager Label: %s\n", controllerManagerLabel)
 					actualPodCount++
 				}
+			}
+		}
+
+		// Print additional information in case of failure
+		if actualPodCount != 1 {
+			fmt.Printf("Actual Pod Count: %d\n", actualPodCount)
+			for _, pod := range pods.Items {
+				fmt.Printf("Pod Name: %s, Phase: %s\n", pod.Name, pod.Status.Phase)
 			}
 		}
 
