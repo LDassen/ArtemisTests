@@ -20,7 +20,8 @@ var _ = Describe("Check if ca-bundle ConfigMap is synced", func() {
 
 		configMapName := "ca-bundle"
 
-		configMap, err := clientset.CoreV1().ConfigMaps(nil).Get(context.TODO(), configMapName, metav1.GetOptions{})
+		// Specify an empty string "" to represent the cluster-wide search
+		configMap, err := clientset.CoreV1().ConfigMaps("").Get(context.TODO(), configMapName, metav1.GetOptions{})
 		Expect(err).To(BeNil(), "Error getting ConfigMap '%s': %v", configMapName, err)
 
 		// Assuming 'Bundles' is a JSON-encoded string
