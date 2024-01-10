@@ -19,7 +19,7 @@ var _ = Describe("Check ConfigMap Existence", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "activemq-artemis-brokers"
-		configMapName := "ca-bundles"
+		configMapName := "ca-test"
 
 		_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 		if err != nil {
