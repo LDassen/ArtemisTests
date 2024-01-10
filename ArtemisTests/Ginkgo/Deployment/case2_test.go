@@ -20,7 +20,7 @@ var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
 		namespace := "activemq-artemis-operator"
-		expectedPodPrefix := "activemq-artemis-controller-manager-9bfc8cb98-dj826"
+		expectedPodPrefix := "activemq-artemis-controller-manager-"
 
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil(), "Error getting pods: %v", err)
