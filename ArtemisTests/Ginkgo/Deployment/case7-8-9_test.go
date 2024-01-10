@@ -1,6 +1,5 @@
 package Deployment_test
 
-
 import (
 	"context"
 	"fmt"
@@ -42,4 +41,8 @@ func checkSecretInNamespace(clientset *kubernetes.Clientset, namespace, secretNa
 
 	actualCount := len(secrets.Items)
 	Expect(actualCount).To(Equal(expectedCount), "%s - Expected %d '%s' secret(s) in namespace %s, but found %d", description, expectedCount, secretName, namespace, actualCount)
+
+	if actualCount > 0 {
+		fmt.Printf("Found '%s' secret(s) in namespace %s\n", secretName, namespace)
+	}
 }
