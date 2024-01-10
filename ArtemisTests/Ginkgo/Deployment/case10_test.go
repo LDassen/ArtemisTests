@@ -7,14 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/util/jsonpath"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/util/wait"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
-	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer' ClusterIssuers with ready set to true", func() {
+	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer' ClusterIssuers", func() {
 		config, err := rest.InClusterConfig()
 		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
@@ -27,36 +25,37 @@ var _ = Describe("Check ClusterIssuers", func() {
 		restClient := clientset.CoreV1().RESTClient()
 		req := restClient.Get().
 			Resource("clusterissuers").
-			VersionedParams(&metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "ClusterIssuer"}}, metav1.ParameterCodec)
+			VersionedParams(nil, metav1.ParameterCodec)
 
 		result := req.Do(context.TODO())
 		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
 
-		var clusterIssuersList runtime.Object
-		err = json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil).
-			Decode(result.Raw(), &clusterIssuersList)
-		Expect(err).To(BeNil(), "Error converting result to List: %v", err)
+		clusterIssuersList, err := unstructuredListFromResponse(result.Raw())
+		Expect(err).To(BeNil(), "Error converting result to UnstructuredList: %v", err)
 
 		foundClusterIssuers := extractClusterIssuerNames(clusterIssuersList)
 
 		// Check if all expected ClusterIssuers are found
 		Expect(foundClusterIssuers).To(ConsistOf(expectedClusterIssuers),
-			"Expected ready ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
+			"Expected ClusterIssuers %v, but found %v", expectedClusterIssuers, foundClusterIssuers)
 	})
 })
 
-func extractClusterIssuerNames(clusterIssuersList runtime.Object) []string {
+func unstructuredListFromResponse(rawResponse []byte) (*unstructured.UnstructuredList, error) {
+	ul := &unstructured.UnstructuredList{}
+	err := ul.UnmarshalJSON(rawResponse)
+	return ul, err
+}
+
+func extractClusterIssuerNames(clusterIssuersList *unstructured.UnstructuredList) []string {
 	var foundClusterIssuers []string
 
-	jsonPath := jsonpath.New("clusterissuer-name")
-	err := jsonPath.Parse("{.items[*].metadata.name}")
-	if err != nil {
-		Fail(fmt.Sprintf("Error parsing JSON path: %v", err))
-	}
-
-	err = jsonPath.Execute(result.Raw(), &foundClusterIssuers)
-	if err != nil {
-		Fail(fmt.Sprintf("Error extracting ClusterIssuer names: %v", err))
+	for _, item := range clusterIssuersList.Items {
+		issuerName, found, _ := unstructured.NestedString(item.Object, "metadata", "name")
+		if found {
+			foundClusterIssuers = append(foundClusterIssuers, issuerName)
+			fmt.Printf("Found ClusterIssuer: %s\n", issuerName)
+		}
 	}
 
 	return foundClusterIssuers
