@@ -1,4 +1,4 @@
-package Deployment_test
+package SSLConfig_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -22,12 +22,18 @@ var _ = Describe("ClusterIssuers Check", func() {
 	})
 
 	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer'", func() {
-		// Check for the presence of 'amq-ca-issuer'
-		_, err := clientset.CertificatesV1().CertificateSigningRequests().Get(context.TODO(), "amq-ca-issuer", metav1.GetOptions{})
+		// Check 'amq-ca-issuer'
+		issuer1, err := clientset.CertmanagerV1().ClusterIssuers().Get(context.TODO(), "amq-ca-issuer", metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred(), "Error while checking 'amq-ca-issuer'")
+		Expect(issuer1.Spec.Acme).To(BeNil()) // Assuming you are not using ACME, adjust as needed
+		Expect(issuer1.Status.Conditions[0].Type).To(Equal("Ready"))
+		Expect(issuer1.Status.Conditions[0].Status).To(Equal("True"))
 
-		// Check for the presence of 'amq-selfsigned-cluster-issuer'
-		_, err = clientset.CertificatesV1().CertificateSigningRequests().Get(context.TODO(), "amq-selfsigned-cluster-issuer", metav1.GetOptions{})
+		// Check 'amq-selfsigned-cluster-issuer'
+		issuer2, err := clientset.CertmanagerV1().ClusterIssuers().Get(context.TODO(), "amq-selfsigned-cluster-issuer", metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred(), "Error while checking 'amq-selfsigned-cluster-issuer'")
+		Expect(issuer2.Spec.Acme).To(BeNil()) // Assuming you are not using ACME, adjust as needed
+		Expect(issuer2.Status.Conditions[0].Type).To(Equal("Ready"))
+		Expect(issuer2.Status.Conditions[0].Status).To(Equal("True"))
 	})
 })
