@@ -3,14 +3,6 @@
 - For every broker there is a linking persistent volume.
 - That port 61619 is opened without SSL.
 
-# Happy cases
-- There are 3 brokers running in the broker namespace. []
-- There is 1 operator running in the operator namespace. []
-
-# Fault cases
-- There are less than 3 brokers running in the broker namespace. []
-- There is 1 operator running in the operator namespace. []
-
 # Test cases
 |#|Test case|Desired outcome|Actual outcome|
 |---|---|---|---|
@@ -28,7 +20,7 @@
 |12| Check if two clusterissuers are present.| Two clusterissuers are present and have the status ready is true. ||
 
 
-# Documentation Review
+# Documentation review
 | # | Test case | Desired outcome |
 | --- | --- | --- | 
 | # | Review documentation in ADO WIKI. | Confirm that the documentation accurately reflects the starting situation of the complete deployment. | 
