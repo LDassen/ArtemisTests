@@ -29,7 +29,9 @@ var _ = Describe("Check the ActiveMQ Artemis Operator Pod", func() {
 		for _, pod := range pods.Items {
 			if strings.HasPrefix(pod.Name, expectedPodPrefix) && pod.Status.Phase == "Running" {
 				fmt.Printf("Pod Name: %s\n", pod.Name)
-		}}
+				actualPodCount++
+			}
+		}
 
 		// Set your expected number of pods here
 		expectedPodCount := 1
