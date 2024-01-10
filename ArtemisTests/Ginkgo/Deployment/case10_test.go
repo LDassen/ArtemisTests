@@ -9,7 +9,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 )
 
 var _ = Describe("Check ClusterIssuers", func() {
@@ -22,17 +21,49 @@ var _ = Describe("Check ClusterIssuers", func() {
 
 		expectedClusterIssuers := []string{"amq-ca-issuer", "amq-selfsigned-cluster-issuer"}
 
-		// Use certificatesV1beta1 client instead of CertificatesV1
-		certificatesClient := clientset.CertificatesV1beta1()
+		// Use the REST client to get ClusterIssuers
+		restClient := clientset.CoreV1().RESTClient()
+		req := restClient.Get().
+			Resource("clusterissuers").
+			VersionedParams(&metav1.ListOptions{TypeMeta: metav1.TypeMeta{Kind: "ClusterIssuer"}}, metav1.ParameterCodec)
 
-		clusterIssuers, err := certificatesClient.ClusterIssuers().List(context.TODO(), metav1.ListOptions{})
-		Expect(err).To(BeNil(), "Error getting ClusterIssuers: %v", err)
+		result := req.Do(context.TODO())
+		Expect(result.Error()).To(BeNil(), "Error getting ClusterIssuers: %v", result.Error())
+
+		var clusterIssuersList metav1.List
+		err = result.Into(&clusterIssuersList)
+		Expect(err).To(BeNil(), "Error converting result to List: %v", err)
 
 		var foundClusterIssuers []string
-		for _, issuer := range clusterIssuers.Items {
-			if issuer.Status.Conditions.IsTrueFor("Ready") {
-				foundClusterIssuers = append(foundClusterIssuers, issuer.Name)
-				fmt.Printf("Found ready ClusterIssuer: %s\n", issuer.Name)
+		for _, item := range clusterIssuersList.Items {
+			issuer, ok := item.(*unstructured.Unstructured)
+			if !ok {
+				Fail("Failed to convert item to Unstructured")
+			}
+
+			issuerName, found, _ := unstructured.NestedString(issuer.Object, "metadata", "name")
+			if !found {
+				Fail("Failed to extract issuer name")
+			}
+
+			conditions, found, _ := unstructured.NestedSlice(issuer.Object, "status", "conditions")
+			if !found {
+				Fail("Failed to extract conditions")
+			}
+
+			// Check if 'Ready' condition is true
+			ready := false
+			for _, condition := range conditions {
+				status, found, _ := unstructured.NestedString(condition.(map[string]interface{}), "status")
+				if found && status == "True" {
+					ready = true
+					break
+				}
+			}
+
+			if ready {
+				foundClusterIssuers = append(foundClusterIssuers, issuerName)
+				fmt.Printf("Found ready ClusterIssuer: %s\n", issuerName)
 			}
 		}
 
