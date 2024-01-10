@@ -12,7 +12,7 @@
 - A queue can have multiple consumers. [6]
 - The producers & consumers get moved to a different broker if the broker they were connected to breaks or restarts. [9]
 
-# Fault
+# Fault cases
 - The producers & consumers cannot connect to Activemq Artemis to produce messages. [2]
 - The producers cannot add messages to a queue. [2]
 - The consumers cannot read messages from a queue. [2]

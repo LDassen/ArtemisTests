@@ -15,7 +15,7 @@
 | 1 | Check if the brokers are running on different nodes. | The brokers get deployed on different nodes (as much as possible). | |
 | 2 | Turn off node affinity in configuration. | The brokers get deployed without using the node affinity rules. | |
 
-# Documentation Review
+# Documentation review
 | # | Test case | Desired outcome |
 | --- | --- | --- | 
 | # | Review documentation in ADO WIKI. | Confirm that the documentation accurately reflects the behavior of the node affinity (high availability), including any configurable parameters and troubleshooting steps. | 

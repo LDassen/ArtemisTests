@@ -10,7 +10,7 @@
 - PVs will expand their storage when getting close to being full. [5]
 - Replacing a PV when under heavy load is possible. [6]
 
-# Fault
+# Fault cases
 - The persistent volumes do not properly store the queue information and messages. [1]
 - Persistent volumes disappear when a broker breaks or restarts. [2]
 - Persistent volume claims disappear after a broker breaks or restarts. [3]
