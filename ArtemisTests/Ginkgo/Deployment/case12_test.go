@@ -3,13 +3,15 @@ package Deployment_test
 import (
 	"context"
 	"fmt"
-	. "github.com/onsi/ginkgo/v2"
+	"os"
+	"path/filepath"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Check ClusterIssuers Existence", func() {
@@ -22,16 +24,8 @@ var _ = Describe("Check ClusterIssuers Existence", func() {
 
 		namespace := "cert-manager"
 
-		// Create a generic Kubernetes client
-		cfg, err := clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
-		Expect(err).To(BeNil(), "Error getting Kubernetes config: %v", err)
-
-		c, err := client.New(cfg, client.Options{})
-		Expect(err).To(BeNil(), "Error creating generic Kubernetes client: %v", err)
-
 		// List all ClusterIssuers in the namespace
-		clusterIssuersList := &certmanagerv1.ClusterIssuerList{}
-		err = c.List(context.TODO(), clusterIssuersList, client.InNamespace(namespace))
+		clusterIssuersList, err := clientset.AdmissionregistrationV1().ClusterIssuers().List(context.TODO(), metav1.ListOptions{})
 		Expect(err).To(BeNil(), "Error listing ClusterIssuers: %v", err)
 
 		// Names of ClusterIssuers to find
@@ -46,11 +40,10 @@ var _ = Describe("Check ClusterIssuers Existence", func() {
 					fmt.Printf("ClusterIssuer '%s' found in namespace '%s'\n", ci.Name, namespace)
 
 					// Perform additional checks if needed
-
 					// Check the conditions
 					Expect(ci.Status.Conditions).To(HaveLen(1), "Expected ClusterIssuer to have one condition.")
-					Expect(ci.Status.Conditions[0].Type).To(Equal(certmanagerv1.ConditionReady), "Expected ClusterIssuer condition to be Ready.")
-					Expect(ci.Status.Conditions[0].Status).To(Equal(certmanagerv1.ConditionTrue), "Expected ClusterIssuer condition status to be True.")
+					Expect(ci.Status.Conditions[0].Type).To(Equal("Ready"), "Expected ClusterIssuer condition to be Ready.")
+					Expect(ci.Status.Conditions[0].Status).To(Equal("True"), "Expected ClusterIssuer condition status to be True.")
 					break
 				}
 			}
