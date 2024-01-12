@@ -8,6 +8,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/homedir"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/client-go/util/wait"
+	"os"
+	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var _ = Describe("Check ClusterIssuers Existence", func() {
@@ -20,20 +27,35 @@ var _ = Describe("Check ClusterIssuers Existence", func() {
 
 		namespace := "cert-manager"
 
+		// Create a generic Kubernetes client
+		cfg, err := config.GetConfig()
+		Expect(err).To(BeNil(), "Error getting Kubernetes config: %v", err)
+
+		c, err := client.New(cfg, client.Options{})
+		Expect(err).To(BeNil(), "Error creating generic Kubernetes client: %v", err)
+
 		// List all ClusterIssuers in the namespace
-		clusterIssuersList, err := clientset.AdmissionregistrationV1().ClusterIssuers().List(context.TODO(), metav1.ListOptions{})
+		clusterIssuersList := &certmanagerv1.ClusterIssuerList{}
+		err = c.List(context.TODO(), clusterIssuersList, client.InNamespace(namespace))
 		Expect(err).To(BeNil(), "Error listing ClusterIssuers: %v", err)
 
 		// Names of ClusterIssuers to find
 		clusterIssuerNames := []string{"amq-ca-issuer", "amq-selfsigned-cluster-issuer"}
 
-		// Check each ClusterIssuer's existence
+		// Check each ClusterIssuer's existence and readiness
 		for _, clusterIssuerName := range clusterIssuerNames {
 			found := false
 			for _, ci := range clusterIssuersList.Items {
 				if ci.Name == clusterIssuerName {
 					found = true
 					fmt.Printf("ClusterIssuer '%s' found in namespace '%s'\n", ci.Name, namespace)
+
+					// Perform additional checks if needed
+
+					// Check the conditions
+					Expect(ci.Status.Conditions).To(HaveLen(1), "Expected ClusterIssuer to have one condition.")
+					Expect(ci.Status.Conditions[0].Type).To(Equal(certmanagerv1.ConditionReady), "Expected ClusterIssuer condition to be Ready.")
+					Expect(ci.Status.Conditions[0].Status).To(Equal(certmanagerv1.ConditionTrue), "Expected ClusterIssuer condition status to be True.")
 					break
 				}
 			}
