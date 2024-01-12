@@ -18,6 +18,7 @@ var _ = Describe("Secrets Check", func() {
 		clientset, err := kubernetes.NewForConfig(config)
 		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
+		// case 7
 		checkSecretInNamespace(clientset, "activemq-artemis-brokers", "amq-ssl-secret", 1, "Check amq-ssl-secret in activemq-artemis-brokers namespace")
 		checkSecretInNamespace(clientset, "activemq-artemis-brokers", "ex-aao-credentials-secret", 1, "Check ex-aao-credentials-secret in activemq-artemis-brokers namespace")
 		checkSecretInNamespace(clientset, "activemq-artemis-brokers", "ex-aao-netty-secret", 1, "Check ex-aao-netty-secret in activemq-artemis-brokers namespace")
@@ -26,9 +27,11 @@ var _ = Describe("Secrets Check", func() {
 		checkSecretInNamespace(clientset, "activemq-artemis-brokers", "secret-security-ex-aao-prop", 1, "Check secret-security-ex-aao-prop in activemq-artemis-brokers namespace")
 		checkSecretInNamespace(clientset, "activemq-artemis-brokers", "ssl-acceptor-ssl-secret", 1, "Check ssl-acceptor-ssl-secret in activemq-artemis-brokers namespace")
 
+		// case 8
 		checkSecretInNamespace(clientset, "activemq-artemis-operator", "amq-ssl-secret", 1, "Check amq-ssl-secret in activemq-artemis-operator namespace")
 		checkSecretInNamespace(clientset, "activemq-artemis-operator", "jks-password-secret", 1, "Check jks-password-secret in activemq-artemis-operator namespace")
 
+		// case 9
 		checkSecretInNamespace(clientset, "cert-manager", "root-secret", 1, "Check root-secret in cert-manager namespace")
 	})
 })

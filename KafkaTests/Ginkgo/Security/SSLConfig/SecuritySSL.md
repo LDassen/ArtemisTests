@@ -16,7 +16,7 @@
 | [case_1](case1_test.go) | Setup a producer that sends a message to a queue. The producer should have the secret mounted. | The message is produced on the queue. ||
 | [case_2](case2_test.go) | Check both certificates and secrets in the cluster to see if they are present. | They are present. ||
 | [case_3](case3_test.go) | Setup a producer that sends a message to a queue. The producer should not have the secret mounted. | The message is not produced inside the queue. ||
-| 4[case_4](case4_test.go) | Setup a producer that sends a message to a queue. The producer should have the secret mounted. | The message is not produced inside the queue. ||
+| Needs to be done still. [case_4](case4_test.go) | Setup a producer that sends a message to a queue. The producer should have the secret mounted. | The message is not produced inside the queue. ||
 
 *Case 3 and 4 will be put in another folder called SSL because they do not need to have the configmap mounted.*
 

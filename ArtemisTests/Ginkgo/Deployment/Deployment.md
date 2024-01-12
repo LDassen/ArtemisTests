@@ -18,7 +18,7 @@
 |[case10](case10_test.go)| Check in cluster if 1 trustmanager pod is running in the correct namespace.| Trustmanager pod is running in the cert-manager namespace.||
 |[case11](case11_test.go)| Check if the broker setup has three bound PVCs (Persistent Volume Claims). | Three PVCs  are present and have the status bound.||
 |[case12](case12_test.go)| Check if two clusterissuers are present.| Two clusterissuers are present and have the status ready is true. ||
-
+Needs to be done still. |[case13]()| Check if bundle is synced. | The bundle is indeed synced.||
 
 # Documentation review
 | # | Test case | Desired outcome |
