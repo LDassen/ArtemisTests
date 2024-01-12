@@ -1,49 +1,65 @@
 package Deployment_test
 
 import (
+	"context"
+	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/client/clientset/versioned/"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"context"
 )
 
-var _ = Describe("ClusterIssuers Check", func() {
-	var clientset *kubernetes.Clientset
-	var certManagerClientset *certmanagerv1.CertmanagerV1Client
-
-	BeforeEach(func() {
-		// Set up the Kubernetes client
+var _ = Describe("Check ClusterIssuer Existence", func() {
+	It("should ensure the ClusterIssuer 'amq-ca-issuer' exists in the 'activemq-artemis-brokers' namespace", func() {
+		// Get in-cluster config
 		config, err := rest.InClusterConfig()
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
-		clientset, err = kubernetes.NewForConfig(config)
-		Expect(err).NotTo(HaveOccurred())
+		// Create Kubernetes client
+		clientset, err := kubernetes.NewForConfig(config)
+		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
 
-		// Set up the Cert-Manager client
-		certManagerClientset, err = certmanagerv1.NewForConfig(config)
-		Expect(err).NotTo(HaveOccurred())
+		// Specify namespace and ClusterIssuer name
+		namespace := "activemq-artemis-brokers"
+		issuerName := "amq-ca-issuer"
+
+		// Check if the ClusterIssuer exists
+		_, err = clientset.AdmissionregistrationV1().ClusterIssuers().Get(context.TODO(), issuerName, metav1.GetOptions{})
+		if err != nil {
+			// ClusterIssuer not found
+			fmt.Printf("ClusterIssuer '%s' not found in namespace '%s'\n", issuerName, namespace)
+			Expect(err).ToNot(HaveOccurred(), "Expected ClusterIssuer to be missing, but got an error.")
+		} else {
+			// ClusterIssuer found
+			fmt.Printf("ClusterIssuer '%s' found in namespace '%s'\n", issuerName, namespace)
+			Expect(err).To(BeNil(), "Expected ClusterIssuer to exist, but got an error.")
+		}
 	})
 
-	It("should find 'amq-ca-issuer' and 'amq-selfsigned-cluster-issuer'", func() {
-		// Check 'amq-ca-issuer'
-		issuer1, err := certManagerClientset.ClusterIssuers("cert-manager.io").Get(context.TODO(), "amq-ca-issuer", metav1.GetOptions{})
-		if err == nil {
-			println("amq-ca-issuer exists:")
-			println("Ready:", issuer1.Status.Conditions[0].Status)
-		} else {
-			println("amq-ca-issuer does not exist")
-		}
+	It("should ensure the ClusterIssuer 'root-secret' exists in the 'cert-manager' namespace", func() {
+		// Get in-cluster config
+		config, err := rest.InClusterConfig()
+		Expect(err).To(BeNil(), "Error getting in-cluster config: %v", err)
 
-		// Check 'amq-selfsigned-cluster-issuer'
-		issuer2, err := certManagerClientset.ClusterIssuers("cert-manager.io").Get(context.TODO(), "amq-selfsigned-cluster-issuer", metav1.GetOptions{})
-		if err == nil {
-			println("amq-selfsigned-cluster-issuer exists:")
-			println("Ready:", issuer2.Status.Conditions[0].Status)
+		// Create Kubernetes client
+		clientset, err := kubernetes.NewForConfig(config)
+		Expect(err).To(BeNil(), "Error creating Kubernetes client: %v", err)
+
+		// Specify namespace and ClusterIssuer name
+		namespace := "cert-manager"
+		issuerName := "root-secret"
+
+		// Check if the ClusterIssuer exists
+		_, err = clientset.AdmissionregistrationV1().ClusterIssuers().Get(context.TODO(), issuerName, metav1.GetOptions{})
+		if err != nil {
+			// ClusterIssuer not found
+			fmt.Printf("ClusterIssuer '%s' not found in namespace '%s'\n", issuerName, namespace)
+			Expect(err).ToNot(HaveOccurred(), "Expected ClusterIssuer to be missing, but got an error.")
 		} else {
-			println("amq-selfsigned-cluster-issuer does not exist")
+			// ClusterIssuer found
+			fmt.Printf("ClusterIssuer '%s' found in namespace '%s'\n", issuerName, namespace)
+			Expect(err).To(BeNil(), "Expected ClusterIssuer to exist, but got an error.")
 		}
 	})
 })
