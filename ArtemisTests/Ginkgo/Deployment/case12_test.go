@@ -8,13 +8,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/homedir"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/client-go/util/wait"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var _ = Describe("Check ClusterIssuers Existence", func() {
@@ -28,7 +23,7 @@ var _ = Describe("Check ClusterIssuers Existence", func() {
 		namespace := "cert-manager"
 
 		// Create a generic Kubernetes client
-		cfg, err := config.GetConfig()
+		cfg, err := clientcmd.BuildConfigFromFlags("", filepath.Join(homedir.HomeDir(), ".kube", "config"))
 		Expect(err).To(BeNil(), "Error getting Kubernetes config: %v", err)
 
 		c, err := client.New(cfg, client.Options{})
